@@ -118,27 +118,34 @@ If you're able to share exported values (a `tokens.json`/style
 dictionary export, or just the numbers) or screenshots, I can match
 them precisely.
 
-## Placeholder assets
+## Case-study assets
 
-No image assets were provided in this conversation, so the app ships
-with lightweight, clearly-labeled SVG placeholders so it runs and looks
-reasonable out of the box:
+**Itaú** (`src/assets/cases/itau/`) uses the real 10-slide deck (cover,
+business context, understanding the existing experience, userflow,
+usability test, usability data analysis, v1-vs-final, accessibility
+specifications, handoff, outcome), exported from the source PDFs to
+JPEG. Each slide's `alt` text in `src/data/cases.ts` describes what's on
+it (headline, key stats, screenshots) for screen-reader users, since the
+text lives inside the image.
+
+The two **Insense** cases still ship with lightweight, clearly-labeled
+SVG placeholders so the app runs and looks reasonable out of the box:
 
 - `src/assets/desktop/wallpaper.svg` — an abstract sky/hills wallpaper
   (an homage, not a reproduction of the real "Bliss" photo).
 - `src/assets/desktop/folder-icon.svg` — a redrawn classic yellow folder.
-- `src/assets/cases/*/slide-*.svg` — 5 generic slides per case study
-  (cover, context, process, solution, outcome), each labeled
-  "Placeholder artwork — replace with exported Figma slide."
+- `src/assets/cases/insense-{onboarding,ai}/slide-*.svg` — 5 generic
+  slides per case (cover, context, process, solution, outcome), each
+  labeled "Placeholder artwork — replace with exported Figma slide."
 - `src/assets/boot/` — no bitmap needed; the boot screen is CSS/SVG
   (see the README in that folder for how to swap in a real screenshot
   instead).
 
 **To use real content:** drop your exported images into the matching
 `src/assets/cases/<case>/` folder and update the `image`/`alt` (and
-optional `caption`) fields in `src/data/cases.ts` — the slide count per
-case isn't hardcoded anywhere else, so adding/removing slides just
-means editing that array.
+optional `caption`) fields in `src/data/cases.ts` — the same way Itaú's
+were swapped in. The slide count per case isn't hardcoded anywhere else,
+so adding/removing slides just means editing that array.
 
 ## Accessibility
 
