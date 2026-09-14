@@ -57,6 +57,7 @@ src/
 
   hooks/
     useBootSequence.ts        # owns the boot-screen timer
+    useStartupSound.ts        # plays the XP chime once, initial boot only
     useKeyboardNavigation.ts  # ← → to navigate slides, Esc to close
     useSwipeNavigation.ts     # touch swipe to navigate slides
 
@@ -96,6 +97,33 @@ Modules — scoped by default, zero extra config via Vite), and an
 - **CSS Modules** for styling (Vite supports `*.module.css` out of the
   box) plus a shared `theme.css` token file, instead of a CSS-in-JS
   library or a utility framework.
+
+## Startup sound
+
+The XP startup chime (`src/assets/audio/windows-xp-startup.wav` — see
+the placeholder note below) plays exactly once: the first time the
+*initial* boot finishes and the desktop appears. It does **not** play
+for the start button's reboot, for opening/closing/switching cases, for
+slide navigation, or on any later render.
+
+- `useStartupSound(bootMode)` (`src/hooks/useStartupSound.ts`) watches
+  for the specific `"initial" → null` transition in `bootMode` — the
+  same state `useBootSequence` already owns — rather than "the desktop
+  is visible," so it can't fire for the `"start" → null` transition.
+- A `sessionStorage` flag (`portfolio-startup-sound-played`) makes
+  "already played" durable across re-renders and even a reload within
+  the same tab, per the brief.
+- Volume is fixed at `0.6`, `loop` is `false`, and a rejected
+  `play()` promise (autoplay blocked) is caught — it falls back to
+  playing on the visitor's very first click/keypress instead, still at
+  most once, and never throws or blocks the UI either way.
+
+**Placeholder note:** no audio file was attached to this project, and
+the real Windows XP startup sound ("The Microsoft Sound") is
+Microsoft's copyrighted property, so it wasn't sourced from the
+internet automatically. The shipped `.wav` is a short synthesized
+three-note chime standing in for it — see
+`src/assets/audio/README.md` for how to swap in the real file.
 
 ## About the Figma design
 

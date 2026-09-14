@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { cases, getCaseById } from "../../data/cases";
 import { useBootSequence } from "../../hooks/useBootSequence";
+import { useStartupSound } from "../../hooks/useStartupSound";
 import { XPBootScreen } from "../XPBootScreen";
 import { PortfolioDesktop } from "../PortfolioDesktop";
 import styles from "./Portfolio.module.css";
@@ -18,6 +19,9 @@ import styles from "./Portfolio.module.css";
  */
 export function Portfolio() {
   const { bootMode, boot } = useBootSequence("initial");
+  // Plays the XP startup chime once, only for the initial "initial" -> null
+  // transition — never for the start button's "start" -> null reboot.
+  useStartupSound(bootMode);
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [hasSeenNavigationTooltip, setHasSeenNavigationTooltip] = useState(false);

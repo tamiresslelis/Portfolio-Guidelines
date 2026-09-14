@@ -55,3 +55,46 @@ checked off without evidence.
       to close this out (exported design tokens, redlines, or
       screenshots would let me tighten `src/styles/theme.css` and the
       per-component CSS to match precisely).
+
+## Startup sound
+
+Verified with an instrumented headless-browser run: `HTMLMediaElement.play`
+was intercepted to count/record every call without depending on the real
+browser's autoplay policy, then driven through the full initial-load,
+Start-button, and case-open/navigate/close/reload flows.
+
+- [x] Initial Windows XP loading screen still lasts ~2 seconds.
+- [x] Desktop with the 3 folders appears after the loading screen.
+- [x] Startup sound begins only after the initial desktop appears — 0
+      `play()` calls while the boot screen was still visible, 1 right
+      after it cleared.
+- [x] Sound plays only once — `play()` call count stayed at 1 through
+      every subsequent interaction in the run below.
+- [x] Sound does not loop — `audio.loop = false` (`useStartupSound.ts`).
+- [x] Sound does not replay when opening a case.
+- [x] Sound does not replay when closing a case (Escape).
+- [x] Sound does not replay when navigating slides (prev/next).
+- [x] Sound does not replay after clicking Start.
+- [x] The 1-second Start loading interaction remains unchanged
+      (`START_BOOT_DURATION` in `src/config/timing.ts` untouched).
+- [x] Sound does not replay when returning to the desktop.
+- [x] React re-renders do not cause the sound to replay — the hook's
+      effect is keyed on the specific `bootMode` transition, not on
+      render.
+- [x] Autoplay rejection does not crash the application — `play()`'s
+      promise is always caught; no console/page errors were observed.
+- [x] Audio state is remembered for the browser session — reloading the
+      page mid-session and waiting past the 2-second boot again produced
+      **0** further `play()` calls (`sessionStorage["portfolio-startup-sound-played"]`
+      persisted across the reload).
+- [x] Portfolio remains fully usable if audio playback is blocked — a
+      blocked `play()` falls back to a one-time first-interaction retry
+      and otherwise fails silently; nothing else in the UI depends on it.
+
+**Placeholder note:** no audio file was attached to this project, and the
+real Windows XP startup sound is Microsoft's copyrighted property, so one
+wasn't sourced from the internet automatically. The shipped
+`src/assets/audio/windows-xp-startup.wav` is a short synthesized
+placeholder chime — see `src/assets/audio/README.md` for how to swap in
+the real file. All of the behavior above is independent of which file is
+actually playing.
