@@ -7,6 +7,9 @@ in XP-chrome windows with slide navigation.
 Built with **React + TypeScript + Vite**, no backend, no global state
 library — see [Architecture](#architecture) for why.
 
+See [ACCEPTANCE_CRITERIA.md](ACCEPTANCE_CRITERIA.md) for the checklist
+this build is held to, and its current status.
+
 ## Getting started
 
 ```bash
