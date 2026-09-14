@@ -84,10 +84,10 @@ export function CaseWindow({
           {caseStudy.title}
         </h2>
         <div className={styles.controls}>
-          <span className={styles.controlButton} aria-hidden="true">
+          <span className={`${styles.controlButton} ${styles.disabledButton}`} aria-hidden="true">
             &#x2013;
           </span>
-          <span className={styles.controlButton} aria-hidden="true">
+          <span className={`${styles.controlButton} ${styles.disabledButton}`} aria-hidden="true">
             &#x25a1;
           </span>
           <button
