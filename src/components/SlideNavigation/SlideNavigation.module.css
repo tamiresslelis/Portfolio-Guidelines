@@ -1,0 +1,45 @@
+.navButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid #8a8a8a;
+  background: linear-gradient(to bottom, var(--xp-btn-silver-start), var(--xp-btn-silver-end));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  color: #2a2a2a;
+  transition: opacity var(--transition-fast);
+}
+
+.navButton:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #ffffff, var(--xp-btn-silver-mid));
+}
+
+.navButton:active:not(:disabled) {
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.navButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.prev {
+  left: 10px;
+}
+
+.next {
+  right: 10px;
+}
+
+@media (max-width: 600px) {
+  .navButton {
+    width: 44px;
+    height: 44px;
+  }
+}

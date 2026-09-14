@@ -1,0 +1,1 @@
+export { XPBootScreen } from "./XPBootScreen";

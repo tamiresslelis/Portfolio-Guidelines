@@ -1,0 +1,86 @@
+/**
+ * Design tokens for the Windows XP ("Luna" blue) visual language used
+ * throughout the portfolio. Centralizing these as CSS custom properties
+ * keeps every component's chrome (windows, taskbar, buttons) consistent
+ * and makes it trivial to fine-tune against the Figma file later.
+ */
+
+:root {
+  /* ---- Typography ---- */
+  --font-family-xp: "Tahoma", "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 19px;
+  --font-size-xl: 26px;
+
+  /* ---- Desktop ---- */
+  --xp-desktop-fallback: #3a7bd5;
+
+  /* ---- Window chrome ---- */
+  --xp-titlebar-start: #0f5cd6;
+  --xp-titlebar-mid: #3d94f4;
+  --xp-titlebar-end: #1558d6;
+  --xp-titlebar-text: #ffffff;
+  --xp-window-border: #0831d9;
+  --xp-window-bg: #ece9d8;
+  --xp-window-content-bg: #fdfdfb;
+  --radius-window: 8px;
+  --xp-shadow-window: 6px 6px 18px rgba(0, 0, 0, 0.45);
+
+  /* ---- Taskbar ---- */
+  --xp-taskbar-start: #2a8de0;
+  --xp-taskbar-end: #245edb;
+  --xp-taskbar-border-top: #6fb3f7;
+  --xp-taskbar-border-bottom: #0b3a9c;
+  --xp-taskbar-height: 34px;
+
+  /* ---- Start button ---- */
+  --xp-start-btn-start: #7ed456;
+  --xp-start-btn-mid: #4bab24;
+  --xp-start-btn-end: #2c7a10;
+  --xp-start-btn-text: #ffffff;
+
+  /* ---- Buttons ---- */
+  --xp-close-btn-start: #f3897d;
+  --xp-close-btn-end: #c9382b;
+  --xp-btn-silver-start: #fefefe;
+  --xp-btn-silver-mid: #e8e8e8;
+  --xp-btn-silver-end: #cfcfcf;
+  --radius-btn: 3px;
+
+  /* ---- Selection / focus ---- */
+  --xp-selection-bg: rgba(49, 106, 197, 0.55);
+  --xp-selection-border: rgba(255, 255, 255, 0.85);
+  --xp-focus-ring: #ffd700;
+
+  /* ---- Shadows / effects ---- */
+  --xp-shadow-icon-text: 1px 1px 2px rgba(0, 0, 0, 0.9);
+  --xp-shadow-taskbar: 0 -1px 6px rgba(0, 0, 0, 0.35);
+
+  /* ---- Layering ---- */
+  --z-desktop: 0;
+  --z-window: 10;
+  --z-tooltip: 15;
+  --z-taskbar: 20;
+  --z-boot: 100;
+
+  /* ---- Motion ---- */
+  --transition-fast: 150ms ease;
+  --transition-medium: 250ms ease;
+  --transition-boot: 400ms ease;
+
+  /* ---- Layout ---- */
+  --desktop-icon-size: 48px;
+  --desktop-icon-column-width: 92px;
+}
+
+/* Respect reduced-motion preferences globally. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-medium: 0ms;
+    --transition-boot: 0ms;
+  }
+}

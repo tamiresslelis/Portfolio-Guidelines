@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750">
+  <rect width="1200" height="750" fill="#3d72e0"/>
+  <rect x="0" y="0" width="1200" height="86" fill="#0f2a6b"/>
+  <text x="48" y="56" font-family="Tahoma, Verdana, sans-serif" font-size="30" font-weight="700" fill="#ffffff">Itaú</text>
+  <rect x="48" y="150" width="1104" height="520" rx="6" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2"/>
+  <text x="600" y="420" font-family="Tahoma, Verdana, sans-serif" font-size="34" font-weight="600" fill="#ffffff" text-anchor="middle" opacity="0.85">Outcomes and impact</text>
+  <text x="600" y="470" font-family="Tahoma, Verdana, sans-serif" font-size="18" fill="#ffffff" text-anchor="middle" opacity="0.6">Placeholder artwork — replace with exported Figma slide</text>
+</svg>

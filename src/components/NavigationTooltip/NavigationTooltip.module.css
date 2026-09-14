@@ -1,0 +1,49 @@
+.tooltip {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  background: #ffffe1;
+  border: 1px solid #000000;
+  border-radius: 2px;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.35);
+  animation: fade-in var(--transition-medium);
+}
+
+.text {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: #111111;
+  white-space: nowrap;
+}
+
+.dismiss {
+  border: none;
+  background: none;
+  font-size: 14px;
+  line-height: 1;
+  color: #111111;
+  padding: 2px 4px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (max-width: 480px) {
+  .text {
+    white-space: normal;
+  }
+}

@@ -1,0 +1,158 @@
+.window {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-window);
+  width: min(920px, 94vw);
+  height: min(640px, 86dvh);
+  display: flex;
+  flex-direction: column;
+  background: var(--xp-window-bg);
+  border: 1px solid var(--xp-window-border);
+  border-radius: var(--radius-window);
+  box-shadow: var(--xp-shadow-window);
+  overflow: hidden;
+}
+
+.window:focus {
+  outline: none;
+}
+
+.titleBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 6px 0 10px;
+  background: linear-gradient(
+    to bottom,
+    var(--xp-titlebar-mid),
+    var(--xp-titlebar-start) 45%,
+    var(--xp-titlebar-end)
+  );
+  border-bottom: 1px solid var(--xp-window-border);
+}
+
+.titleIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  background: #ffd45e;
+  border-radius: 2px;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--xp-titlebar-text);
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  flex-shrink: 0;
+  display: flex;
+  gap: 3px;
+}
+
+.controlButton {
+  width: 22px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  color: #1a1a1a;
+  background: linear-gradient(to bottom, var(--xp-btn-silver-start), var(--xp-btn-silver-end));
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.closeButton {
+  pointer-events: auto;
+  color: #ffffff;
+  background: linear-gradient(to bottom, var(--xp-close-btn-start), var(--xp-close-btn-end));
+  border-color: #7a1c14;
+}
+
+.closeButton:hover {
+  filter: brightness(1.1);
+}
+
+.closeButton:active {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.content {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding: 20px 56px;
+  background: var(--xp-window-content-bg);
+  overflow: hidden;
+}
+
+.statusBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+  background: linear-gradient(to bottom, #f2f1e8, #e4e2d3);
+  border-top: 1px solid #b8b6a8;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #8a8a7a;
+  background: #ffffff;
+}
+
+.dotActive {
+  background: var(--xp-titlebar-start);
+  border-color: var(--xp-titlebar-start);
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px 48px;
+  }
+}
+
+@media (max-width: 600px) {
+  .window {
+    width: 100vw;
+    height: calc(100dvh - var(--xp-taskbar-height));
+    top: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+  }
+
+  .content {
+    padding: 12px 44px;
+  }
+
+  .dots {
+    display: none;
+  }
+}
