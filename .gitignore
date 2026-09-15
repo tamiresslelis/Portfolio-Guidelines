@@ -11,10 +11,19 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+
+# TanStack Start / Nitro build output
+.nitro
+.output
+.vinxi
+.tanstack
+__unconfig*
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo

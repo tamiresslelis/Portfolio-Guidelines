@@ -47,7 +47,7 @@ export interface CaseStudy {
 export const cases: CaseStudy[] = [
   {
     id: "itau",
-    folderLabel: "Itaú",
+    folderLabel: "Case Itaú: Foreign Currency Transactions",
     title: "Itaú — Foreign Currency Transactions",
     summary:
       "Bringing Itaú's foreign currency transaction workflow from Bankline desktop to mobile.",
@@ -106,7 +106,7 @@ export const cases: CaseStudy[] = [
   },
   {
     id: "insense-onboarding",
-    folderLabel: "Insense — Onboarding",
+    folderLabel: "Case Insense: Onboarding",
     title: "Insense — Onboarding",
     summary: "Reducing onboarding drop-off for creators on Insense's two-sided marketplace.",
     slides: [
@@ -149,7 +149,7 @@ export const cases: CaseStudy[] = [
   },
   {
     id: "insense-ai",
-    folderLabel: "Insense — AI",
+    folderLabel: "Case Insense: AI-Assisted Content Review",
     title: "Insense — AI-Assisted Content Review",
     summary:
       "A Gemini-powered mobile prototype that checks creator content against brand requirements before submission.",

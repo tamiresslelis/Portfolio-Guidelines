@@ -1,15 +1,17 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import { cases, getCaseById } from "../../data/cases";
-import { useBootSequence } from "../../hooks/useBootSequence";
-import { useStartupSound } from "../../hooks/useStartupSound";
-import { XPBootScreen } from "../XPBootScreen";
-import { PortfolioDesktop } from "../PortfolioDesktop";
-import styles from "./Portfolio.module.css";
+import { cases, getCaseById } from "../data/cases";
+import { useBootSequence } from "../hooks/useBootSequence";
+import { useStartupSound } from "../hooks/useStartupSound";
+import { XPBootScreen } from "../components/XPBootScreen";
+import { Desktop } from "../components/Desktop";
+
+export const Route = createFileRoute("/")({ component: Home });
 
 /**
- * Top-level state container for the whole experience. Everything the app
- * needs to remember lives in plain `useState` here — no global state
- * library required:
+ * The whole experience's top-level state. Everything the app needs to
+ * remember lives in plain `useState` here — no global state library
+ * required:
  *  - `bootMode` (via `useBootSequence`): which boot/loading screen, if any,
  *    is currently showing.
  *  - `activeCaseId` / `currentSlide`: which case window is open, if any,
@@ -17,7 +19,7 @@ import styles from "./Portfolio.module.css";
  *  - `hasSeenNavigationTooltip`: whether the "use ← → or swipe" hint has
  *    already been shown once this session.
  */
-export function Portfolio() {
+function Home() {
   const { bootMode, boot } = useBootSequence("initial");
   // Plays the XP startup chime once, only for the initial "initial" -> null
   // transition — never for the start button's "start" -> null reboot.
@@ -68,8 +70,8 @@ export function Portfolio() {
   }, []);
 
   return (
-    <div className={styles.portfolio}>
-      <PortfolioDesktop
+    <div className="relative h-dvh w-full overflow-hidden">
+      <Desktop
         cases={cases}
         activeCase={activeCase}
         currentSlide={currentSlide}

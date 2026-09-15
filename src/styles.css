@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/**
+ * Design tokens for the Windows XP ("Luna" blue) visual language, exposed
+ * as Tailwind v4 theme values so components can use ordinary utilities
+ * (bg-xp-taskbar-start, text-xp-sm, rounded-xp-window, shadow-xp-window,
+ * animate-xp-wave, ...) instead of hand-written CSS. Multi-stop gradients
+ * still need one-off arbitrary-value utilities at their call sites — that's
+ * the "small custom CSS" the brief allows for, kept to a minimum.
+ */
+@theme {
+  /* Typography */
+  --font-xp: "Tahoma", "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+  --text-xp-xs: 11px;
+  --text-xp-sm: 12px;
+  --text-xp-base: 13px;
+  --text-xp-md: 15px;
+  --text-xp-lg: 19px;
+  --text-xp-xl: 26px;
+
+  /* Desktop */
+  --color-xp-desktop-fallback: #3a7bd5;
+
+  /* Window chrome */
+  --color-xp-titlebar-start: #0f5cd6;
+  --color-xp-titlebar-mid: #3d94f4;
+  --color-xp-titlebar-end: #1558d6;
+  --color-xp-window-border: #0831d9;
+  --color-xp-window-bg: #ece9d8;
+  --color-xp-window-content-bg: #fdfdfb;
+  --radius-xp-window: 8px;
+  --shadow-xp-window: 6px 6px 18px rgba(0, 0, 0, 0.45);
+
+  /* Taskbar */
+  --color-xp-taskbar-start: #2a8de0;
+  --color-xp-taskbar-end: #245edb;
+  --color-xp-taskbar-border-top: #6fb3f7;
+  --color-xp-taskbar-border-bottom: #0b3a9c;
+
+  /* Start button */
+  --color-xp-start-start: #7ed456;
+  --color-xp-start-mid: #4bab24;
+  --color-xp-start-end: #2c7a10;
+
+  /* Buttons */
+  --color-xp-close-start: #f3897d;
+  --color-xp-close-end: #c9382b;
+  --color-xp-silver-start: #fefefe;
+  --color-xp-silver-mid: #e8e8e8;
+  --color-xp-silver-end: #cfcfcf;
+  --radius-xp-btn: 3px;
+
+  /* Selection / focus */
+  --color-xp-selection-bg: rgba(49, 106, 197, 0.55);
+  --color-xp-selection-border: rgba(255, 255, 255, 0.85);
+  --color-xp-focus-ring: #ffd700;
+
+  /* Animations (paired with @keyframes below) */
+  --animate-xp-wave: xp-wave 2.6s ease-in-out infinite;
+  --animate-xp-slide: xp-slide 1.1s linear infinite;
+  --animate-xp-fade-in: xp-fade-in 250ms ease;
+}
+
+@keyframes xp-wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes xp-slide {
+  from {
+    left: -46px;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+@keyframes xp-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden; /* the desktop metaphor fills the viewport; case
+                          windows scroll internally */
+    -webkit-font-smoothing: antialiased;
+    font-family: var(--font-xp);
+    font-size: var(--text-xp-base);
+    color: #1a1a1a;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  /* A visible, high-contrast focus ring that reads clearly against both
+     the blue desktop and the light window chrome. */
+  :focus-visible {
+    outline: 2px solid var(--color-xp-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
