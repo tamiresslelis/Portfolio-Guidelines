@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import xpFlag from "../../assets/desktop/xp-flag.svg";
 import styles from "./XPTaskbar.module.css";
 
 interface XPTaskbarProps {
@@ -27,12 +28,7 @@ export function XPTaskbar({ onStartClick, activeCaseTitle }: XPTaskbarProps) {
   return (
     <div className={styles.taskbar}>
       <button type="button" className={styles.startButton} onClick={onStartClick}>
-        <svg className={styles.startFlag} viewBox="0 0 32 32" width="18" height="18" aria-hidden="true">
-          <rect x="2" y="2" width="13" height="13" fill="#f25022" />
-          <rect x="17" y="2" width="13" height="13" fill="#7fba00" />
-          <rect x="2" y="17" width="13" height="13" fill="#00a4ef" />
-          <rect x="17" y="17" width="13" height="13" fill="#ffb900" />
-        </svg>
+        <img src={xpFlag} alt="" className={styles.startFlag} width={18} height={18} />
         <span className={styles.startLabel}>start</span>
       </button>
 

@@ -1,20 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1200" width="1920" height="1200" preserveAspectRatio="xMidYMid slice">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#3a7bd5"/>
-      <stop offset="55%" stop-color="#79b8f0"/>
-      <stop offset="100%" stop-color="#bfe3ff"/>
+      <stop offset="0%" stop-color="#1657c9"/>
+      <stop offset="45%" stop-color="#3f8ce0"/>
+      <stop offset="100%" stop-color="#a9d8f5"/>
     </linearGradient>
-    <linearGradient id="hillFar" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#7dc855"/>
-      <stop offset="100%" stop-color="#5aa93a"/>
-    </linearGradient>
-    <linearGradient id="hillNear" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#4f9e2e"/>
-      <stop offset="100%" stop-color="#2f7a1a"/>
-    </linearGradient>
+    <radialGradient id="hillLight" cx="62%" cy="0%" r="115%">
+      <stop offset="0%" stop-color="#a7e06a"/>
+      <stop offset="42%" stop-color="#5cae32"/>
+      <stop offset="100%" stop-color="#215f13"/>
+    </radialGradient>
+    <filter id="cloudBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
   </defs>
+
   <rect width="1920" height="1200" fill="url(#sky)"/>
-  <path d="M0,650 C320,560 620,760 960,680 C1300,600 1600,720 1920,640 L1920,1200 L0,1200 Z" fill="url(#hillFar)"/>
-  <path d="M0,820 C280,900 640,760 980,860 C1340,960 1620,840 1920,900 L1920,1200 L0,1200 Z" fill="url(#hillNear)"/>
+
+  <g filter="url(#cloudBlur)" fill="#ffffff">
+    <g opacity="0.95">
+      <ellipse cx="520" cy="160" rx="170" ry="50"/>
+      <ellipse cx="630" cy="180" rx="130" ry="42"/>
+      <ellipse cx="410" cy="185" rx="110" ry="36"/>
+    </g>
+    <g opacity="0.85">
+      <ellipse cx="980" cy="140" rx="230" ry="55"/>
+      <ellipse cx="1120" cy="165" rx="150" ry="42"/>
+      <ellipse cx="850" cy="170" rx="130" ry="38"/>
+    </g>
+    <g opacity="0.9">
+      <ellipse cx="1620" cy="260" rx="190" ry="50"/>
+      <ellipse cx="1750" cy="240" rx="120" ry="38"/>
+    </g>
+  </g>
+
+  <path
+    d="M0,740 C260,660 430,860 760,780 C1040,712 1180,560 1500,660 C1660,710 1800,700 1920,650 L1920,1200 L0,1200 Z"
+    fill="url(#hillLight)"
+  />
 </svg>

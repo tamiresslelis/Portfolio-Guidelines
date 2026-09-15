@@ -31,7 +31,7 @@ Node 20+ is recommended.
 src/
   assets/
     boot/                    # boot screen is CSS/SVG — see the README there
-    desktop/                 # wallpaper + folder icon (placeholders, see below)
+    desktop/                 # wallpaper, flag mark, folder icon (see below)
     cases/
       itau/
       insense-onboarding/
@@ -189,16 +189,20 @@ text lives inside the image.
 - **Insense AI** (`src/assets/cases/insense-ai/`) — 3 slides: cover,
   project overview, AI review flow.
 
-The desktop chrome still ships with lightweight, clearly-labeled SVG
-placeholders so the app runs and looks reasonable without any exported
-Figma assets:
+The desktop chrome is hand-drawn CSS/SVG rather than bitmap screenshots,
+redrawn to match reference screenshots the project owner shared of the
+real boot screen and desktop:
 
-- `src/assets/desktop/wallpaper.svg` — an abstract sky/hills wallpaper
-  (an homage, not a reproduction of the real "Bliss" photo).
+- `src/assets/desktop/wallpaper.svg` — a from-scratch recreation of the
+  classic sky/clouds/rolling-hill wallpaper (gradients + blurred cloud
+  shapes), not a reproduction of the actual "Bliss" photo.
+- `src/assets/desktop/xp-flag.svg` — the four-color flag mark used in
+  the boot screen and the taskbar's start button.
 - `src/assets/desktop/folder-icon.svg` — a redrawn classic yellow folder.
-- `src/assets/boot/` — no bitmap needed; the boot screen is CSS/SVG
-  (see the README in that folder for how to swap in a real screenshot
-  instead).
+- `src/assets/boot/` — no bitmap needed; the "Microsoft Windows xp
+  Professional" boot screen (flag, wordmark, loading bar, copyright/logo
+  footer) is built entirely in `XPBootScreen` with CSS and SVG (see the
+  README in that folder for how to swap in a real screenshot instead).
 
 **To add or replace slides:** drop your exported images into the
 matching `src/assets/cases/<case>/` folder and update the `image`/`alt`
