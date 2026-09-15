@@ -91,10 +91,9 @@ Start-button, and case-open/navigate/close/reload flows.
       blocked `play()` falls back to a one-time first-interaction retry
       and otherwise fails silently; nothing else in the UI depends on it.
 
-**Placeholder note:** no audio file was attached to this project, and the
-real Windows XP startup sound is Microsoft's copyrighted property, so one
-wasn't sourced from the internet automatically. The shipped
-`src/assets/audio/windows-xp-startup.wav` is a short synthesized
-placeholder chime — see `src/assets/audio/README.md` for how to swap in
-the real file. All of the behavior above is independent of which file is
+**Update:** `src/assets/audio/windows-xp-startup.wav` is now the real
+Windows XP startup chime, supplied by the project owner and trimmed
+(~4.95s) from a source clip that had the startup and shutdown sounds
+back to back — see `src/assets/audio/README.md`. All of the behavior
+verified above is unchanged, since it never depended on which file was
 actually playing.

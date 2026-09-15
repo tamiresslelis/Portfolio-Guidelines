@@ -100,11 +100,12 @@ Modules — scoped by default, zero extra config via Vite), and an
 
 ## Startup sound
 
-The XP startup chime (`src/assets/audio/windows-xp-startup.wav` — see
-the placeholder note below) plays exactly once: the first time the
-*initial* boot finishes and the desktop appears. It does **not** play
-for the start button's reboot, for opening/closing/switching cases, for
-slide navigation, or on any later render.
+The real XP startup chime (`src/assets/audio/windows-xp-startup.wav`,
+~4.95s — see `src/assets/audio/README.md` for provenance) plays exactly
+once: the first time the *initial* boot finishes and the desktop
+appears. It does **not** play for the start button's reboot, for
+opening/closing/switching cases, for slide navigation, or on any later
+render.
 
 - `useStartupSound(bootMode)` (`src/hooks/useStartupSound.ts`) watches
   for the specific `"initial" → null` transition in `bootMode` — the
@@ -116,14 +117,17 @@ slide navigation, or on any later render.
 - Volume is fixed at `0.6`, `loop` is `false`, and a rejected
   `play()` promise (autoplay blocked) is caught — it falls back to
   playing on the visitor's very first click/keypress instead, still at
-  most once, and never throws or blocks the UI either way.
+  most once, and never throws or blocks the UI either way. (In
+  practice, most first-time visitors will hear it on that first click
+  rather than the literal instant the desktop renders — no unmuted
+  sound can autoplay before any interaction in any modern browser;
+  that's a browser policy, not something this code can override.)
 
-**Placeholder note:** no audio file was attached to this project, and
-the real Windows XP startup sound ("The Microsoft Sound") is
-Microsoft's copyrighted property, so it wasn't sourced from the
-internet automatically. The shipped `.wav` is a short synthesized
-three-note chime standing in for it — see
-`src/assets/audio/README.md` for how to swap in the real file.
+**Rights note:** "The Microsoft Sound" is Microsoft's copyrighted
+property. The audio file here was supplied by the project owner for
+this personal, non-commercial portfolio; it wasn't sourced from the
+internet by me. Keep that in mind if this repo or its deployment ever
+goes fully public/commercial.
 
 ## About the Figma design
 

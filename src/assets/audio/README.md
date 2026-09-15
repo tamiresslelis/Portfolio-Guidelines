@@ -1,13 +1,12 @@
 # Audio assets
 
-`windows-xp-startup.wav` is a **placeholder** — a short synthesized
-three-note chime, not a reproduction of the real Windows XP startup
-sound ("The Microsoft Sound"). No audio file was attached to this
-conversation, and that sound is Microsoft's copyrighted property, so
-one wasn't sourced from the internet on your behalf.
+`windows-xp-startup.wav` is the real Windows XP startup chime ("The
+Microsoft Sound"), trimmed to ~4.95s from a source clip that had the
+startup and shutdown sounds back to back — the shutdown half was cut
+(there was a clean ~1.2s silent gap between the two to cut on), leaving
+just the startup sound with its natural decay tail, no extra silence
+before or after.
 
-**To use the real sound:** drop your own audio file in here (e.g.
-`windows-xp-startup.mp3`) and update the import in
-`src/hooks/useStartupSound.ts` to point at it. Nothing else needs to
-change — the hook just plays whatever `HTMLAudioElement` src it's given,
-once, at the moment the initial boot finishes.
+Used by `src/hooks/useStartupSound.ts`, which plays it exactly once, the
+first time the initial boot finishes and the desktop appears — see the
+"Startup sound" section in the top-level README for the full behavior.
