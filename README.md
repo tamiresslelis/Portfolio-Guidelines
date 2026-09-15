@@ -148,32 +148,38 @@ them precisely.
 
 ## Case-study assets
 
-**Itaú** (`src/assets/cases/itau/`, 10 slides) and **Insense Onboarding**
-(`src/assets/cases/insense-onboarding/`, 7 slides: cover, business
-context, diagnosis, research signals, value-exchange clarity,
-v1-vs-final, outcome) use their real decks, exported from the source
-PDFs to JPEG. Each slide's `alt` text in `src/data/cases.ts` describes
-what's on it (headline, key stats, screenshots) for screen-reader users,
-since the text lives inside the image.
+All three cases use their real decks, exported from the source PDFs to
+JPEG. Each slide's `alt` text in `src/data/cases.ts` describes what's on
+it (headline, key stats, screenshots) for screen-reader users, since the
+text lives inside the image.
 
-**Insense AI** still ships with a lightweight, clearly-labeled SVG
-placeholder deck so the app runs and looks reasonable out of the box:
+- **Itaú** (`src/assets/cases/itau/`) — 10 slides: cover, business
+  context, understanding the existing experience, userflow, usability
+  test, usability data analysis, v1-vs-final, accessibility
+  specifications, handoff, outcome.
+- **Insense Onboarding** (`src/assets/cases/insense-onboarding/`) — 7
+  slides: cover, business context, diagnosis, research signals,
+  value-exchange clarity, v1-vs-final, outcome.
+- **Insense AI** (`src/assets/cases/insense-ai/`) — 3 slides: cover,
+  project overview, AI review flow.
+
+The desktop chrome still ships with lightweight, clearly-labeled SVG
+placeholders so the app runs and looks reasonable without any exported
+Figma assets:
 
 - `src/assets/desktop/wallpaper.svg` — an abstract sky/hills wallpaper
   (an homage, not a reproduction of the real "Bliss" photo).
 - `src/assets/desktop/folder-icon.svg` — a redrawn classic yellow folder.
-- `src/assets/cases/insense-ai/slide-*.svg` — 5 generic slides (cover,
-  context, process, solution, outcome), each labeled "Placeholder
-  artwork — replace with exported Figma slide."
 - `src/assets/boot/` — no bitmap needed; the boot screen is CSS/SVG
   (see the README in that folder for how to swap in a real screenshot
   instead).
 
-**To use real content:** drop your exported images into the matching
-`src/assets/cases/<case>/` folder and update the `image`/`alt` (and
-optional `caption`) fields in `src/data/cases.ts` — the same way Itaú's
-were swapped in. The slide count per case isn't hardcoded anywhere else,
-so adding/removing slides just means editing that array.
+**To add or replace slides:** drop your exported images into the
+matching `src/assets/cases/<case>/` folder and update the `image`/`alt`
+(and optional `caption`) fields in `src/data/cases.ts` — the same way
+all three cases' real decks were added. The slide count per case isn't
+hardcoded anywhere else, so adding/removing slides just means editing
+that array.
 
 ## Accessibility
 

@@ -1,11 +1,6 @@
 /**
- * Case-study content.
- *
- * Itaú and Insense Onboarding use the real decks exported from their source
- * PDFs. Insense AI is still a lightweight placeholder generated to keep the
- * project runnable out of the box (see `src/assets/cases/insense-ai/`) —
- * replace the `src` of each slide with the real artwork the same way the
- * other two were swapped in; the component tree does not need to change.
+ * Case-study content. All three cases use the real decks exported from
+ * their source PDFs (see `src/assets/cases/*`).
  */
 
 import itauSlide01 from "../assets/cases/itau/01-cover.jpg";
@@ -27,11 +22,9 @@ import onboardingSlide05 from "../assets/cases/insense-onboarding/05-value-excha
 import onboardingSlide06 from "../assets/cases/insense-onboarding/06-v1-vs-final.jpg";
 import onboardingSlide07 from "../assets/cases/insense-onboarding/07-outcome.jpg";
 
-import aiSlide1 from "../assets/cases/insense-ai/slide-1-cover.svg";
-import aiSlide2 from "../assets/cases/insense-ai/slide-2-context.svg";
-import aiSlide3 from "../assets/cases/insense-ai/slide-3-process.svg";
-import aiSlide4 from "../assets/cases/insense-ai/slide-4-solution.svg";
-import aiSlide5 from "../assets/cases/insense-ai/slide-5-outcome.svg";
+import aiSlide01 from "../assets/cases/insense-ai/01-cover.jpg";
+import aiSlide02 from "../assets/cases/insense-ai/02-project-overview.jpg";
+import aiSlide03 from "../assets/cases/insense-ai/03-ai-review-flow.jpg";
 
 export interface CaseSlideData {
   id: string;
@@ -157,14 +150,25 @@ export const cases: CaseStudy[] = [
   {
     id: "insense-ai",
     folderLabel: "Insense — AI",
-    title: "Insense AI — Case Study",
-    summary: "AI feature design case study for Insense.",
+    title: "Insense — AI-Assisted Content Review",
+    summary:
+      "A Gemini-powered mobile prototype that checks creator content against brand requirements before submission.",
     slides: [
-      { id: "cover", image: aiSlide1, alt: "Insense AI case study cover slide" },
-      { id: "context", image: aiSlide2, alt: "Context and problem statement" },
-      { id: "process", image: aiSlide3, alt: "Research and design process" },
-      { id: "solution", image: aiSlide4, alt: "Final solution overview" },
-      { id: "outcome", image: aiSlide5, alt: "Outcomes and impact" },
+      {
+        id: "cover",
+        image: aiSlide01,
+        alt: "Cover slide: “Case Insense: AI-Assisted Content Review,” on a dark teal background with the Insense logo and a US flag.",
+      },
+      {
+        id: "project-overview",
+        image: aiSlide02,
+        alt: "Project overview, “AI-Assisted UGC Compliance”: designed and built a Gemini-powered mobile prototype that evaluates creator content against brand requirements and returns structured, actionable feedback in under 3 minutes. Role: Product Designer, Product Strategy, Prototyping, Front-end. Built with React Native, TypeScript, and the Gemini API. Timeline: 4 weeks. GitHub: github.com/tamiresslelis/contentreview. Alongside: an “Add your content” mobile screen with uploaded videos and “Start AI review” / “Skip AI review” buttons.",
+      },
+      {
+        id: "ai-review-flow",
+        image: aiSlide03,
+        alt: "Three-screen AI review flow: a “Quick AI review” consent modal explaining the automated check and requiring agreement before starting; a “3 videos need fixes” summary listing how many issues were flagged per video, with “Fix all” and “Submit” actions; and a Video 1 detail screen showing the AI's structured feedback checklist (e.g. “Fast & Convenient,” “Effective Formula,” “Instant Brightening”) with a “Well done! This content is following the brief requirements” confirmation.",
+      },
     ],
   },
 ];
