@@ -1,11 +1,11 @@
 /**
  * Case-study content.
  *
- * The Itaú slides are the real deck exported from Figma. The two Insense
- * cases are still lightweight placeholders generated to keep the project
- * runnable out of the box (see `src/assets/cases/*`) — replace the `src` of
- * each slide with the real artwork the same way Itaú's were swapped in; the
- * component tree does not need to change.
+ * Itaú and Insense Onboarding use the real decks exported from their source
+ * PDFs. Insense AI is still a lightweight placeholder generated to keep the
+ * project runnable out of the box (see `src/assets/cases/insense-ai/`) —
+ * replace the `src` of each slide with the real artwork the same way the
+ * other two were swapped in; the component tree does not need to change.
  */
 
 import itauSlide01 from "../assets/cases/itau/01-cover.jpg";
@@ -19,11 +19,13 @@ import itauSlide08 from "../assets/cases/itau/08-accessibility-specifications.jp
 import itauSlide09 from "../assets/cases/itau/09-handoff.jpg";
 import itauSlide10 from "../assets/cases/itau/10-outcome.jpg";
 
-import onboardingSlide1 from "../assets/cases/insense-onboarding/slide-1-cover.svg";
-import onboardingSlide2 from "../assets/cases/insense-onboarding/slide-2-context.svg";
-import onboardingSlide3 from "../assets/cases/insense-onboarding/slide-3-process.svg";
-import onboardingSlide4 from "../assets/cases/insense-onboarding/slide-4-solution.svg";
-import onboardingSlide5 from "../assets/cases/insense-onboarding/slide-5-outcome.svg";
+import onboardingSlide01 from "../assets/cases/insense-onboarding/01-cover.jpg";
+import onboardingSlide02 from "../assets/cases/insense-onboarding/02-business-context.jpg";
+import onboardingSlide03 from "../assets/cases/insense-onboarding/03-diagnosis.jpg";
+import onboardingSlide04 from "../assets/cases/insense-onboarding/04-research-signals.jpg";
+import onboardingSlide05 from "../assets/cases/insense-onboarding/05-value-exchange-clarity.jpg";
+import onboardingSlide06 from "../assets/cases/insense-onboarding/06-v1-vs-final.jpg";
+import onboardingSlide07 from "../assets/cases/insense-onboarding/07-outcome.jpg";
 
 import aiSlide1 from "../assets/cases/insense-ai/slide-1-cover.svg";
 import aiSlide2 from "../assets/cases/insense-ai/slide-2-context.svg";
@@ -112,14 +114,44 @@ export const cases: CaseStudy[] = [
   {
     id: "insense-onboarding",
     folderLabel: "Insense — Onboarding",
-    title: "Insense Onboarding — Case Study",
-    summary: "Onboarding experience design case study for Insense.",
+    title: "Insense — Onboarding",
+    summary: "Reducing onboarding drop-off for creators on Insense's two-sided marketplace.",
     slides: [
-      { id: "cover", image: onboardingSlide1, alt: "Insense onboarding case study cover slide" },
-      { id: "context", image: onboardingSlide2, alt: "Context and problem statement" },
-      { id: "process", image: onboardingSlide3, alt: "Research and design process" },
-      { id: "solution", image: onboardingSlide4, alt: "Final solution overview" },
-      { id: "outcome", image: onboardingSlide5, alt: "Outcomes and impact" },
+      {
+        id: "cover",
+        image: onboardingSlide01,
+        alt: "Cover slide: “Case Insense: Onboarding,” on a dark teal background with the Insense logo and a US flag.",
+      },
+      {
+        id: "business-context",
+        image: onboardingSlide02,
+        alt: "Business context, 2025 baseline: Insense is a two-sided marketplace where brands hire creators and creators apply for campaigns; every abandoned onboarding reduced the number of searchable, campaign-ready creator profiles available to brands. Brands subscribe to create campaigns and hire creators, so creators need to complete onboarding with the information required to match campaign requirements. Alongside: three onboarding screens — name entry, birthdate, and a location search field.",
+      },
+      {
+        id: "diagnosis",
+        image: onboardingSlide03,
+        alt: "Diagnosis: the issue wasn't simply the number of questions, it was the perceived cost of answering them. A step-by-step review surfaced three recurring reasons creators hesitated, slowed down, or left the flow: (1) unclear value — asked for profile data before the benefit was obvious; (2) high effort — some steps felt heavier than the value they unlocked; (3) trust concerns — sensitive questions needed more context to feel justified.",
+      },
+      {
+        id: "research-signals",
+        image: onboardingSlide04,
+        alt: "Three signals revealed the same friction: product data (Amplitude) showed drop-off increased where the value of answering was unclear; a competitor-flow scan compared how other products explain value during onboarding; and creator immersion — experiencing the creator setup and expectations firsthand — pointed to the same root issue: creators were asked for effort before understanding the value of answering.",
+      },
+      {
+        id: "value-exchange-clarity",
+        image: onboardingSlide05,
+        alt: "Users continued when the value exchange was clear: each onboarding step was rewritten to make the exchange explicit — why the information is needed, how it improves relevance, and what the creator receives in return. An annotated mobile screen shows a birthdate step reworded to “Share your birthday to unlock tailored opportunities and verify your eligibility easily.”",
+      },
+      {
+        id: "v1-vs-final",
+        image: onboardingSlide06,
+        alt: "v1-vs-Final comparison of a “What content do you create?” category-selection step: the Final version introduces small icons next to each category (Health & Wellness, Food & Drinks, Home & Garden, Fashion & Style) as visual cues, improving recognition and scanability so users could identify relevant categories faster and with less cognitive effort.",
+      },
+      {
+        id: "outcome",
+        image: onboardingSlide07,
+        alt: "Outcome: onboarding drop-off fell from 32% to 18%, increasing the number of campaign-ready creators — more creators could apply for campaigns, giving brands a stronger pool of talent to launch successfully. Alongside: a screenshot of the Insense brand dashboard listing active campaigns, hires, and chats.",
+      },
     ],
   },
   {

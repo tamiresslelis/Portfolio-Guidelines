@@ -148,23 +148,23 @@ them precisely.
 
 ## Case-study assets
 
-**Itaú** (`src/assets/cases/itau/`) uses the real 10-slide deck (cover,
-business context, understanding the existing experience, userflow,
-usability test, usability data analysis, v1-vs-final, accessibility
-specifications, handoff, outcome), exported from the source PDFs to
-JPEG. Each slide's `alt` text in `src/data/cases.ts` describes what's on
-it (headline, key stats, screenshots) for screen-reader users, since the
-text lives inside the image.
+**Itaú** (`src/assets/cases/itau/`, 10 slides) and **Insense Onboarding**
+(`src/assets/cases/insense-onboarding/`, 7 slides: cover, business
+context, diagnosis, research signals, value-exchange clarity,
+v1-vs-final, outcome) use their real decks, exported from the source
+PDFs to JPEG. Each slide's `alt` text in `src/data/cases.ts` describes
+what's on it (headline, key stats, screenshots) for screen-reader users,
+since the text lives inside the image.
 
-The two **Insense** cases still ship with lightweight, clearly-labeled
-SVG placeholders so the app runs and looks reasonable out of the box:
+**Insense AI** still ships with a lightweight, clearly-labeled SVG
+placeholder deck so the app runs and looks reasonable out of the box:
 
 - `src/assets/desktop/wallpaper.svg` — an abstract sky/hills wallpaper
   (an homage, not a reproduction of the real "Bliss" photo).
 - `src/assets/desktop/folder-icon.svg` — a redrawn classic yellow folder.
-- `src/assets/cases/insense-{onboarding,ai}/slide-*.svg` — 5 generic
-  slides per case (cover, context, process, solution, outcome), each
-  labeled "Placeholder artwork — replace with exported Figma slide."
+- `src/assets/cases/insense-ai/slide-*.svg` — 5 generic slides (cover,
+  context, process, solution, outcome), each labeled "Placeholder
+  artwork — replace with exported Figma slide."
 - `src/assets/boot/` — no bitmap needed; the boot screen is CSS/SVG
   (see the README in that folder for how to swap in a real screenshot
   instead).
