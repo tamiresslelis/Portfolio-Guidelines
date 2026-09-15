@@ -94,6 +94,14 @@ Modules — scoped by default, zero extra config via Vite), and an
   (`useKeyboardNavigation`, `useSwipeNavigation`) against native
   `keydown`/`touchstart`/`touchend` events — no carousel or gesture
   library.
+- **Window controls:** the case window's minimize button is present for
+  XP-chrome authenticity but styled as disabled — this window only
+  supports closing (X / Escape). Maximize is real: `CaseWindow` keeps a
+  local `isMaximized` boolean (reset to `false` whenever a different
+  case is opened, so one window's maximize state never leaks into the
+  next), and toggles a CSS class that fills the desktop down to the
+  taskbar, reusing the same full-screen treatment the small-screen
+  breakpoint already applies by default.
 - **CSS Modules** for styling (Vite supports `*.module.css` out of the
   box) plus a shared `theme.css` token file, instead of a CSS-in-JS
   library or a utility framework.

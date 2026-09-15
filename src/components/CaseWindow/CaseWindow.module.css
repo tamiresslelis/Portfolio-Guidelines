@@ -19,6 +19,17 @@
   outline: none;
 }
 
+/* Maximize fills the desktop (minus the taskbar), same treatment the
+   small-screen breakpoint below already gives every window by default. */
+.maximized {
+  top: 0;
+  left: 0;
+  transform: none;
+  width: 100vw;
+  height: calc(100dvh - var(--xp-taskbar-height));
+  border-radius: 0;
+}
+
 .titleBar {
   flex-shrink: 0;
   display: flex;
@@ -94,6 +105,24 @@
 }
 
 .closeButton:active {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Maximize/restore: the one window-control button that's actually wired
+   up, so it gets the "enabled" silver treatment (matching the slide nav
+   arrows) rather than the muted look of the disabled minimize button. */
+.maximizeButton {
+  pointer-events: auto;
+  color: #1a1a1a;
+  background: linear-gradient(to bottom, var(--xp-btn-silver-start), var(--xp-btn-silver-end));
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.maximizeButton:hover {
+  background: linear-gradient(to bottom, #ffffff, var(--xp-btn-silver-mid));
+}
+
+.maximizeButton:active {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 

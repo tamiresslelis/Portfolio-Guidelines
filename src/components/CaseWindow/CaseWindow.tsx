@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { CaseStudy } from "../../data/cases";
 import { useKeyboardNavigation } from "../../hooks/useKeyboardNavigation";
 import { useSwipeNavigation } from "../../hooks/useSwipeNavigation";
@@ -40,21 +40,28 @@ export function CaseWindow({
   const windowRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const totalSlides = caseStudy.slides.length;
   const slide = caseStudy.slides[currentSlide];
 
-  // Move focus into the window on open, and restore it to whatever
-  // triggered the open (the desktop folder icon) on close.
+  // Move focus into the window on open, restore it to whatever triggered
+  // the open (the desktop folder icon) on close, and start each newly
+  // opened case un-maximized regardless of how the previous one was left.
   useEffect(() => {
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     windowRef.current?.focus();
+    setIsMaximized(false);
 
     return () => {
       previouslyFocused.current?.focus?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseStudy.id]);
+
+  const handleToggleMaximize = () => {
+    setIsMaximized((maximized) => !maximized);
+  };
 
   const handlePrev = () => {
     onDismissNavigationTooltip();
@@ -72,7 +79,7 @@ export function CaseWindow({
   return (
     <div
       ref={windowRef}
-      className={styles.window}
+      className={`${styles.window} ${isMaximized ? styles.maximized : ""}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -87,9 +94,22 @@ export function CaseWindow({
           <span className={`${styles.controlButton} ${styles.disabledButton}`} aria-hidden="true">
             &#x2013;
           </span>
-          <span className={`${styles.controlButton} ${styles.disabledButton}`} aria-hidden="true">
-            &#x25a1;
-          </span>
+          <button
+            type="button"
+            className={`${styles.controlButton} ${styles.maximizeButton}`}
+            onClick={handleToggleMaximize}
+            aria-label={isMaximized ? "Restore case study window" : "Maximize case study window"}
+            aria-pressed={isMaximized}
+          >
+            {isMaximized ? (
+              <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
+                <rect x="3.5" y="0.75" width="7.75" height="7.75" fill="none" stroke="currentColor" strokeWidth="1.1" />
+                <rect x="0.75" y="3.5" width="7.75" height="7.75" fill="#e8e8e8" stroke="currentColor" strokeWidth="1.1" />
+              </svg>
+            ) : (
+              "□"
+            )}
+          </button>
           <button
             type="button"
             className={`${styles.controlButton} ${styles.closeButton}`}
