@@ -83,10 +83,8 @@ Start-button, and case-open/navigate/close/reload flows.
       render.
 - [x] Autoplay rejection does not crash the application — `play()`'s
       promise is always caught; no console/page errors were observed.
-- [x] Audio state is remembered for the browser session — reloading the
-      page mid-session and waiting past the 2-second boot again produced
-      **0** further `play()` calls (`sessionStorage["portfolio-startup-sound-played"]`
-      persisted across the reload).
+- [x] Audio state is remembered for the browser session, **once it has
+      actually played** — see the bug-fix note below for the distinction.
 - [x] Portfolio remains fully usable if audio playback is blocked — a
       blocked `play()` falls back to a one-time first-interaction retry
       and otherwise fails silently; nothing else in the UI depends on it.
@@ -94,6 +92,35 @@ Start-button, and case-open/navigate/close/reload flows.
 **Update:** `src/assets/audio/windows-xp-startup.wav` is now the real
 Windows XP startup chime, supplied by the project owner and trimmed
 (~4.95s) from a source clip that had the startup and shutdown sounds
-back to back — see `src/assets/audio/README.md`. All of the behavior
-verified above is unchanged, since it never depended on which file was
-actually playing.
+back to back — see `src/assets/audio/README.md`.
+
+**Bug found and fixed:** the original hook called `sessionStorage`'s
+"played" flag immediately after *attempting* `play()`, before knowing
+whether it succeeded. Since every browser blocks unmuted autoplay
+before any page interaction, that first attempt is rejected on nearly
+every real first visit — which meant the session got marked "played"
+with nothing ever actually heard, and a visitor reloading to try again
+found it permanently silent for the rest of the session. This is what
+was actually being reported as "the music doesn't work."
+
+Fixed by moving the mark to the audio element's native `playing` event
+— the one signal that means sound is genuinely coming out of the
+speakers — and broadening the first-interaction retry to five event
+types (`pointerdown`, `pointerup`, `touchend`, `mousedown`, `keydown`)
+using plain `addEventListener`/`removeEventListener` instead of
+`AbortSignal`, since browsers and input methods differ on which
+gesture types they treat as sufficient to unlock playback. Re-verified
+with real (non-instrumented) autoplay policy across a 4-reload
+sequence in the same browser context:
+
+| Reload | Visitor interacted? | `play()` attempted? | `playing` fired? | session flag after |
+|---|---|---|---|---|
+| 1 | no | yes (1, blocked) | no | not set |
+| 2 | no | yes (1, blocked again) | no | not set |
+| 3 | yes (clicked a folder) | yes (blocked, then 1 retry) | **yes** | **set** |
+| 4 | — | **no attempt at all** | — | still set |
+
+That table is the fix: reloads 1–2 keep trying (correctly — nothing
+was ever heard, so nothing should be "used up"), reload 3 is where it
+actually plays and only then gets marked, and reload 4 correctly does
+nothing further. No console/page errors across the whole run.

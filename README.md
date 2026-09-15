@@ -113,15 +113,29 @@ render.
   is visible," so it can't fire for the `"start" → null` transition.
 - A `sessionStorage` flag (`portfolio-startup-sound-played`) makes
   "already played" durable across re-renders and even a reload within
-  the same tab, per the brief.
-- Volume is fixed at `0.6`, `loop` is `false`, and a rejected
-  `play()` promise (autoplay blocked) is caught — it falls back to
-  playing on the visitor's very first click/keypress instead, still at
-  most once, and never throws or blocks the UI either way. (In
-  practice, most first-time visitors will hear it on that first click
-  rather than the literal instant the desktop renders — no unmuted
-  sound can autoplay before any interaction in any modern browser;
-  that's a browser policy, not something this code can override.)
+  the same tab. Critically, this flag is only set from the audio
+  element's `playing` event — i.e. once sound has *actually* started —
+  never just because `play()` was called. Marking it any earlier means
+  a blocked first attempt permanently "uses up" the one play for the
+  whole session with nothing ever having been heard, which is exactly
+  the bug an earlier version of this hook had.
+- No unmuted sound can autoplay before the visitor has interacted with
+  the page at all, in any modern browser — that's browser policy, not
+  something client-side code can override. So the first `play()` call
+  is expected to be rejected on a first visit; the hook catches that
+  and retries once, synchronously inside the visitor's first genuine
+  interaction (`pointerdown`, `pointerup`, `touchend`, `mousedown`, or
+  `keydown` — deliberately more than just `click`, since engines and
+  input types differ on which of these they treat as sufficient
+  activation for unlocking playback). That retry uses plain
+  `addEventListener`/`removeEventListener` rather than newer APIs like
+  `AbortSignal`, so it degrades safely on older engines too. If that
+  retry also fails, the session isn't marked as played, so a later
+  reload gets a fresh chance rather than staying silent forever.
+- Volume is fixed at `0.6`, `loop` is `false`, and every `play()` call
+  is wrapped so a browser that doesn't return a Promise from `play()`
+  (very old WebKit) can't throw an uncaught error — it's normalized
+  into a real Promise either way.
 
 **Rights note:** "The Microsoft Sound" is Microsoft's copyrighted
 property. The audio file here was supplied by the project owner for
