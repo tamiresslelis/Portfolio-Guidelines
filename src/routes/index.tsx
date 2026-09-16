@@ -16,6 +16,10 @@ export const Route = createFileRoute("/")({ component: Home });
  *    is currently showing.
  *  - `activeCaseId` / `currentSlide`: which case window is open, if any,
  *    and which slide it's on.
+ *  - `isResumeOpen`: whether the resume window is open. Mutually exclusive
+ *    with `activeCaseId` — opening one explicitly closes the other, so
+ *    only one window is ever on screen at a time, matching every other
+ *    "return to desktop" path (Start, close, boot).
  *  - `hasSeenNavigationTooltip`: whether the "use ← → or swipe" hint has
  *    already been shown once this session.
  */
@@ -26,12 +30,14 @@ function Home() {
   useStartupSound(bootMode);
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isResumeOpen, setIsResumeOpen] = useState(false);
   const [hasSeenNavigationTooltip, setHasSeenNavigationTooltip] = useState(false);
 
   const activeCase = getCaseById(activeCaseId) ?? null;
   const totalSlides = activeCase?.slides.length ?? 0;
 
   const handleOpenCase = useCallback((id: string) => {
+    setIsResumeOpen(false);
     setActiveCaseId(id);
     setCurrentSlide(0);
   }, []);
@@ -42,11 +48,22 @@ function Home() {
     setCurrentSlide(0);
   }, []);
 
+  const handleOpenResume = useCallback(() => {
+    setActiveCaseId(null);
+    setCurrentSlide(0);
+    setIsResumeOpen(true);
+  }, []);
+
+  const handleCloseResume = useCallback(() => {
+    setIsResumeOpen(false);
+  }, []);
+
   // Start button: always shows the (short) boot screen, whether pressed
-  // from the desktop or from inside an open case.
+  // from the desktop, from inside an open case, or from the resume.
   const handleStartClick = useCallback(() => {
     setActiveCaseId(null);
     setCurrentSlide(0);
+    setIsResumeOpen(false);
     boot("start");
   }, [boot]);
 
@@ -83,6 +100,9 @@ function Home() {
         onStartClick={handleStartClick}
         showNavigationTooltip={activeCase !== null && !hasSeenNavigationTooltip}
         onDismissNavigationTooltip={handleDismissNavigationTooltip}
+        isResumeOpen={isResumeOpen}
+        onOpenResume={handleOpenResume}
+        onCloseResume={handleCloseResume}
       />
       <XPBootScreen
         visible={bootMode !== null}

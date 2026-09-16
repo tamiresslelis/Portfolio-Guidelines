@@ -54,17 +54,19 @@ src/
       insense-onboarding/
       insense-ai/            # placeholder slide artwork per case study
     audio/                   # the XP startup chime (see below)
+    resume/                  # the original resume PDF (see below)
 
   components/
-    Desktop.tsx              # wallpaper + folders + case window + taskbar
+    Desktop.tsx              # wallpaper + folders + case/resume window + taskbar
     DesktopFolder.tsx        # one desktop icon
     Taskbar.tsx              # the taskbar shell
     StartButton.tsx          # the green Start button
-    CaseWindow.tsx           # XP window chrome hosting a case study
+    CaseWindow.tsx           # XP window chrome hosting a case study's slides
     CaseSlide.tsx            # one slide's artwork + caption
     SlideNavigation.tsx      # prev/next arrow buttons
     SlideCounter.tsx         # "n / total" readout
     NavigationTooltip.tsx    # first-time "use ← → or swipe" hint
+    ResumeWindow.tsx         # XP window chrome hosting the resume document
     XPBootScreen.tsx         # full-viewport boot/loading screen
 
   config/
@@ -72,6 +74,7 @@ src/
 
   data/
     cases.ts                 # case-study content model + data
+    resume.ts                # resume content model + data
 
   hooks/
     useBootSequence.ts        # owns the boot-screen timer
@@ -101,9 +104,12 @@ to change.
   (the route component itself, rather than a separate `Portfolio`
   wrapper — TanStack Router's file-based routing already gives `/` a
   dedicated component, so an extra wrapper would just be indirection).
-  State covers `bootMode`, `activeCaseId`, `currentSlide`, and
-  `hasSeenNavigationTooltip`. No Redux/Zustand/etc. — there's nothing
-  here that outgrows React state.
+  State covers `bootMode`, `activeCaseId`, `currentSlide`, `isResumeOpen`,
+  and `hasSeenNavigationTooltip`. `isResumeOpen` is mutually exclusive
+  with `activeCaseId` — opening one explicitly closes the other, so only
+  one window is ever on screen, matching every existing "back to
+  desktop" path (Start, close, boot). No Redux/Zustand/etc. — there's
+  nothing here that outgrows React state.
 - **The two boot durations** (`INITIAL_BOOT_DURATION = 2000`,
   `START_BOOT_DURATION = 1000`) are defined once in
   `src/config/timing.ts` and consumed through the `useBootSequence`
@@ -264,6 +270,30 @@ real, independently-cacheable file URLs instead of being inlined as
 `background-image` set to a `data:` URI can silently fail to render
 under some browser security configurations, while a normal file URL
 doesn't have that problem.
+
+## Resume
+
+A fourth desktop folder, "Resume," opens `ResumeWindow` — the same XP
+window chrome as a case (title bar, disabled minimize, working
+maximize, working close, Escape to close, focus moved in on open and
+restored on close) but not built on `CaseWindow`: a resume is one long
+scrollable document, not a slideshow, so forcing it through the
+slide-viewer (`CaseSlide`/`SlideNavigation`/dots) wouldn't fit, and
+there's no swipe/arrow-key slide navigation or tooltip here.
+
+- The content (`src/data/resume.ts`) is real, semantic, selectable
+  HTML — not a rasterized image of the CV — so it's screen-reader
+  readable, `Ctrl`/`Cmd`-F searchable, and copy-pasteable. Bold
+  emphasis in the data uses a tiny `**bold**` markdown-lite convention
+  (`renderRichText` in `ResumeWindow.tsx`) rather than a markdown
+  parser dependency.
+- A "Download PDF" link in the window's status bar points at the
+  original file (`src/assets/resume/tamires-lelis-resume.pdf`) via a
+  real `download` attribute, so the exact formatted document is still
+  one click away.
+- Opening the resume and opening a case are mutually exclusive (see
+  `isResumeOpen` in [Architecture](#architecture)) — only one window is
+  ever open at a time, same as everywhere else in the app.
 
 ## Accessibility
 

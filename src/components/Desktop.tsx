@@ -1,6 +1,7 @@
 import type { CaseStudy } from "../data/cases";
 import { DesktopFolder } from "./DesktopFolder";
 import { CaseWindow } from "./CaseWindow";
+import { ResumeWindow } from "./ResumeWindow";
 import { Taskbar } from "./Taskbar";
 // The real "Bliss" photo, supplied by the project owner (see
 // src/assets/desktop/README.md for provenance/rights). vite.config.ts
@@ -21,12 +22,15 @@ interface DesktopProps {
   onStartClick: () => void;
   showNavigationTooltip: boolean;
   onDismissNavigationTooltip: () => void;
+  isResumeOpen: boolean;
+  onOpenResume: () => void;
+  onCloseResume: () => void;
 }
 
 /**
- * The Windows XP desktop: wallpaper, case-study folder icons, the (optional)
- * open case window, and the taskbar. This is the composition root for
- * everything that isn't the boot screen.
+ * The Windows XP desktop: wallpaper, case-study folder icons, the resume
+ * folder, the (optional) open case/resume window, and the taskbar. This is
+ * the composition root for everything that isn't the boot screen.
  */
 export function Desktop({
   cases,
@@ -40,7 +44,12 @@ export function Desktop({
   onStartClick,
   showNavigationTooltip,
   onDismissNavigationTooltip,
+  isResumeOpen,
+  onOpenResume,
+  onCloseResume,
 }: DesktopProps) {
+  const activeWindowTitle = activeCase?.title ?? (isResumeOpen ? "Resume — Tamires Lelis" : null);
+
   return (
     <div
       className="absolute inset-0 overflow-hidden bg-xp-desktop-fallback bg-cover bg-center bg-no-repeat"
@@ -57,6 +66,9 @@ export function Desktop({
             />
           </li>
         ))}
+        <li>
+          <DesktopFolder id="resume" title="Resume" isOpen={isResumeOpen} onOpen={onOpenResume} />
+        </li>
       </ul>
 
       {activeCase && (
@@ -72,7 +84,9 @@ export function Desktop({
         />
       )}
 
-      <Taskbar onStartClick={onStartClick} activeCaseTitle={activeCase?.title ?? null} />
+      {isResumeOpen && <ResumeWindow onClose={onCloseResume} />}
+
+      <Taskbar onStartClick={onStartClick} activeCaseTitle={activeWindowTitle} />
     </div>
   );
 }
