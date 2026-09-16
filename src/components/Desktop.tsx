@@ -2,10 +2,12 @@ import type { CaseStudy } from "../data/cases";
 import { DesktopFolder } from "./DesktopFolder";
 import { CaseWindow } from "./CaseWindow";
 import { Taskbar } from "./Taskbar";
-// vite.config.ts disables asset inlining, so this resolves to a real file
-// URL rather than a data: URI (see the comment there for why that matters
-// for a CSS background-image specifically).
-import wallpaper from "../assets/desktop/wallpaper.svg";
+// The real "Bliss" photo, supplied by the project owner (see
+// src/assets/desktop/README.md for provenance/rights). vite.config.ts
+// disables asset inlining, so this resolves to a real file URL rather
+// than a data: URI (see the comment there for why that matters for a
+// CSS background-image specifically).
+import wallpaper from "../assets/desktop/wallpaper.webp";
 
 interface DesktopProps {
   cases: CaseStudy[];

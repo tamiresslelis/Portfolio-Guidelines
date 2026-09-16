@@ -232,13 +232,15 @@ text lives inside the image.
 - **Insense AI** (`src/assets/cases/insense-ai/`) — 3 slides: cover,
   project overview, AI review flow.
 
-The desktop chrome is hand-drawn CSS/SVG rather than bitmap screenshots,
-redrawn to match reference screenshots the project owner shared of the
-real boot screen and desktop:
+The desktop background is the real "Bliss" photo (see
+`src/assets/desktop/README.md` for provenance and size/quality notes);
+the rest of the desktop chrome is hand-drawn CSS/SVG rather than bitmap
+screenshots, redrawn to match reference screenshots the project owner
+shared of the real boot screen and desktop:
 
-- `src/assets/desktop/wallpaper.svg` — a from-scratch recreation of the
-  classic sky/clouds/rolling-hill wallpaper (gradients + blurred cloud
-  shapes), not a reproduction of the actual "Bliss" photo.
+- `src/assets/desktop/wallpaper.webp` — the real "Bliss" photograph,
+  supplied by the project owner, used as-is at its original 1200×965
+  resolution (~111KB).
 - `src/assets/desktop/xp-flag.svg` — the four-color flag mark used in
   the boot screen and the taskbar's start button.
 - `src/assets/desktop/folder-icon.svg` — a redrawn classic yellow folder.
@@ -256,10 +258,10 @@ hardcoded anywhere else, so adding/removing slides just means editing
 that array.
 
 **Note on asset inlining:** `vite.config.ts` sets
-`build.assetsInlineLimit: 0`, so small assets like these SVGs always
-resolve to real, independently-cacheable file URLs instead of being
-inlined as `data:` URIs. That matters specifically for the wallpaper: a
-CSS `background-image` set to a `data:` URI can silently fail to render
+`build.assetsInlineLimit: 0`, so assets like these always resolve to
+real, independently-cacheable file URLs instead of being inlined as
+`data:` URIs. That matters specifically for the wallpaper: a CSS
+`background-image` set to a `data:` URI can silently fail to render
 under some browser security configurations, while a normal file URL
 doesn't have that problem.
 
