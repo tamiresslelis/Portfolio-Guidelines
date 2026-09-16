@@ -1,6 +1,8 @@
 /**
- * Case-study content. All three cases use the real decks exported from
- * their source PDFs (see `src/assets/cases/*`).
+ * Case-study content. Itaú and both Insense cases use the real decks
+ * exported from their source PDFs. Quick Win is still a placeholder deck
+ * (see `src/assets/cases/*`) — replace its slides the same way the other
+ * three were, once the real artwork is ready.
  */
 
 import itauSlide01 from "../assets/cases/itau/01-cover.jpg";
@@ -25,6 +27,12 @@ import onboardingSlide07 from "../assets/cases/insense-onboarding/07-outcome.jpg
 import aiSlide01 from "../assets/cases/insense-ai/01-cover.jpg";
 import aiSlide02 from "../assets/cases/insense-ai/02-project-overview.jpg";
 import aiSlide03 from "../assets/cases/insense-ai/03-ai-review-flow.jpg";
+
+import quickWinSlide01 from "../assets/cases/quick-win/01-cover.svg";
+import quickWinSlide02 from "../assets/cases/quick-win/02-context.svg";
+import quickWinSlide03 from "../assets/cases/quick-win/03-process.svg";
+import quickWinSlide04 from "../assets/cases/quick-win/04-solution.svg";
+import quickWinSlide05 from "../assets/cases/quick-win/05-outcome.svg";
 
 export interface CaseSlideData {
   id: string;
@@ -169,6 +177,19 @@ export const cases: CaseStudy[] = [
         image: aiSlide03,
         alt: "Three-screen AI review flow: a “Quick AI review” consent modal explaining the automated check and requiring agreement before starting; a “3 videos need fixes” summary listing how many issues were flagged per video, with “Fix all” and “Submit” actions; and a Video 1 detail screen showing the AI's structured feedback checklist (e.g. “Fast & Convenient,” “Effective Formula,” “Instant Brightening”) with a “Well done! This content is following the brief requirements” confirmation.",
       },
+    ],
+  },
+  {
+    id: "quick-win",
+    folderLabel: "Quick Win",
+    title: "Quick Win — Case Study",
+    summary: "Placeholder — swap in the real case study once it's ready.",
+    slides: [
+      { id: "cover", image: quickWinSlide01, alt: "Quick Win case study cover slide" },
+      { id: "context", image: quickWinSlide02, alt: "Context and problem statement" },
+      { id: "process", image: quickWinSlide03, alt: "Research and design process" },
+      { id: "solution", image: quickWinSlide04, alt: "Final solution overview" },
+      { id: "outcome", image: quickWinSlide05, alt: "Outcomes and impact" },
     ],
   },
 ];

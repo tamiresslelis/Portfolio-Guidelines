@@ -52,7 +52,8 @@ src/
     cases/
       itau/
       insense-onboarding/
-      insense-ai/            # placeholder slide artwork per case study
+      insense-ai/
+      quick-win/             # placeholder slide artwork — see below
     audio/                   # the XP startup chime (see below)
     resume/                  # the original resume PDF (see below)
 
@@ -223,10 +224,10 @@ them precisely.
 
 ## Case-study assets
 
-All three cases use their real decks, exported from the source PDFs to
-JPEG. Each slide's `alt` text in `src/data/cases.ts` describes what's on
-it (headline, key stats, screenshots) for screen-reader users, since the
-text lives inside the image.
+Itaú and both Insense cases use their real decks, exported from the
+source PDFs to JPEG. Each slide's `alt` text in `src/data/cases.ts`
+describes what's on it (headline, key stats, screenshots) for
+screen-reader users, since the text lives inside the image.
 
 - **Itaú** (`src/assets/cases/itau/`) — 10 slides: cover, business
   context, understanding the existing experience, userflow, usability
@@ -237,6 +238,9 @@ text lives inside the image.
   value-exchange clarity, v1-vs-final, outcome.
 - **Insense AI** (`src/assets/cases/insense-ai/`) — 3 slides: cover,
   project overview, AI review flow.
+- **Quick Win** (`src/assets/cases/quick-win/`) — still a 5-slide
+  placeholder deck (cover, context, process, solution, outcome), same
+  as the other three started out. Waiting on the real case content.
 
 The desktop background is the real "Bliss" photo (see
 `src/assets/desktop/README.md` for provenance and size/quality notes);
@@ -256,12 +260,20 @@ shared of the real boot screen and desktop:
   (see the README in that folder for how to swap in a real screenshot
   instead).
 
-**To add or replace slides:** drop your exported images into the
-matching `src/assets/cases/<case>/` folder and update the `image`/`alt`
-(and optional `caption`) fields in `src/data/cases.ts` — the same way
-all three cases' real decks were added. The slide count per case isn't
-hardcoded anywhere else, so adding/removing slides just means editing
-that array.
+**To add or replace slides** (e.g. once Quick Win's real content is
+ready): drop your exported images into the matching
+`src/assets/cases/<case>/` folder and update the `image`/`alt` (and
+optional `caption`) fields in `src/data/cases.ts` — the same way the
+other three cases' real decks were added. The slide count per case
+isn't hardcoded anywhere else, so adding/removing slides just means
+editing that array.
+
+**To add a whole new case-study folder:** add an entry to the `cases`
+array in `src/data/cases.ts` (`id`, `folderLabel`, `title`, `summary`,
+`slides`) and drop its artwork in a matching
+`src/assets/cases/<id>/` folder — that's it. `Desktop.tsx` renders one
+folder icon per entry in `cases` automatically, so no component needs
+to change; this is exactly how the Quick Win folder was added.
 
 **Note on asset inlining:** `vite.config.ts` sets
 `build.assetsInlineLimit: 0`, so assets like these always resolve to
