@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import type { BootMode } from "../config/timing";
 import startupSoundSrc from "../assets/audio/windows-xp-startup.wav";
 
-const SESSION_KEY = "portfolio-startup-sound-played";
 const STARTUP_VOLUME = 0.6;
 
 // Every event type modern browsers count as "user activation" that a
@@ -17,25 +16,6 @@ const UNLOCK_EVENTS: (keyof DocumentEventMap)[] = [
   "keydown",
 ];
 
-function hasAlreadyPlayed(): boolean {
-  try {
-    return sessionStorage.getItem(SESSION_KEY) === "true";
-  } catch {
-    // sessionStorage unavailable (private browsing, disabled storage, a
-    // sandboxed iframe, ...) — the in-memory ref guard in the hook below
-    // still keeps this to at most once for the current page load.
-    return false;
-  }
-}
-
-function markAsPlayed(): void {
-  try {
-    sessionStorage.setItem(SESSION_KEY, "true");
-  } catch {
-    // ignore — see hasAlreadyPlayed above
-  }
-}
-
 /** Normalizes `HTMLMediaElement.play()` into a real Promise across
  *  engines that don't return one (very old WebKit) and ones that throw
  *  synchronously instead of rejecting. */
@@ -49,21 +29,22 @@ function playSafely(audio: HTMLAudioElement): Promise<void> {
 }
 
 /**
- * Plays the Windows XP startup sound exactly once per browser session: the
- * first time `bootMode` transitions from the *initial* load into the
- * desktop (`"initial"` -> `null`). It intentionally does NOT fire for the
- * start button's reboot (`"start"` -> `null`), for re-renders, or more
- * than once per session — a sessionStorage flag makes "already played"
- * durable even across a reload within the same tab.
+ * Plays the Windows XP startup chime every time the boot/loading screen
+ * finishes and the desktop appears — the initial load *and* every
+ * subsequent Start-button reboot both count, since both are the same
+ * black-screen-to-desktop transition. One `Audio` element is created once
+ * and reused (rewound to the start each time) rather than allocating a new
+ * one per play.
  *
  * Every browser blocks unmuted autoplay before the visitor has interacted
- * with the page at all, so the first attempt here will usually be
- * rejected — that's expected, not a bug. What matters is what happens
- * next: `sessionStorage` is only marked "played" once the audio element's
- * `playing` event actually fires, never just because we *attempted* it.
- * That distinction is the difference between "plays once, eventually" and
- * "silently uses up its one shot on a blocked attempt and never plays for
- * the rest of the session" — the latter is what a premature mark causes.
+ * with the page at all, so only the very first attempt (right after the
+ * initial 2s boot, if the visitor hasn't touched the page yet) is likely to
+ * be rejected — that's expected, not a bug. That one blocked attempt falls
+ * back to playing on the visitor's next interaction instead. Once the
+ * visitor has interacted with the page at all (which clicking Start itself
+ * counts as), the browser's autoplay policy stays unlocked for the rest of
+ * the session, so every later reboot plays immediately without needing a
+ * fallback of its own.
  *
  * Kept separate from `XPBootScreen` (which is purely visual) and driven by
  * the same `bootMode` that `useBootSequence` already owns, so the boot
@@ -71,55 +52,55 @@ function playSafely(audio: HTMLAudioElement): Promise<void> {
  */
 export function useStartupSound(bootMode: BootMode): void {
   const previousBootMode = useRef<BootMode>(bootMode);
-  const hasAttempted = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const cancelPendingUnlock = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    const cameFromInitialBoot = previousBootMode.current === "initial";
-    const justReachedDesktop = bootMode === null;
+    // A fresh reboot transition supersedes any not-yet-retried fallback
+    // from a previous one, so it doesn't also fire (double-playing) the
+    // moment this new transition's own interaction/click happens.
+    cancelPendingUnlock.current?.();
+    cancelPendingUnlock.current = null;
+
+    const justFinishedBooting = previousBootMode.current !== null && bootMode === null;
     previousBootMode.current = bootMode;
 
-    if (!cameFromInitialBoot || !justReachedDesktop) return;
-    if (hasAttempted.current || hasAlreadyPlayed()) return;
-    hasAttempted.current = true;
+    if (!justFinishedBooting) return;
 
-    const audio = new Audio(startupSoundSrc);
-    audio.volume = STARTUP_VOLUME;
-    audio.loop = false;
-
-    // The single source of truth for "it actually played": a native
-    // media event, not a resolved play() promise (some engines don't
-    // return one) and not "we called play()" (autoplay can be blocked).
-    audio.addEventListener("playing", markAsPlayed, { once: true });
-
-    let unlockAttached = false;
-    const removeUnlockListeners = () => {
-      UNLOCK_EVENTS.forEach((type) => document.removeEventListener(type, retryOnFirstInteraction));
-      unlockAttached = false;
-    };
-
-    // Autoplay was blocked. Fall back to playing on the visitor's first
-    // interaction with the page instead — still at most once (every
-    // listener is torn down together the instant any one of them fires),
-    // and if that retry also fails we just give up quietly. Either way,
-    // the portfolio stays fully usable without sound, and a future
-    // reload this session gets a fresh chance since nothing was marked.
-    const retryOnFirstInteraction = () => {
-      removeUnlockListeners();
-      playSafely(audio).catch(() => {
-        // still blocked, or failed for some other reason — nothing to do
-      });
-    };
+    if (!audioRef.current) {
+      audioRef.current = new Audio(startupSoundSrc);
+      audioRef.current.volume = STARTUP_VOLUME;
+      audioRef.current.loop = false;
+    }
+    const audio = audioRef.current;
+    audio.currentTime = 0;
 
     playSafely(audio).catch(() => {
-      unlockAttached = true;
-      UNLOCK_EVENTS.forEach((type) =>
-        document.addEventListener(type, retryOnFirstInteraction, { once: true }),
-      );
-    });
+      // Autoplay was blocked. Fall back to playing on the visitor's next
+      // interaction with the page instead, and if that retry also fails,
+      // give up quietly — the portfolio stays fully usable without sound
+      // either way.
+      const retryOnNextInteraction = () => {
+        removeUnlockListeners();
+        audio.currentTime = 0;
+        playSafely(audio).catch(() => {
+          // still blocked, or failed for some other reason — nothing to do
+        });
+      };
 
-    return () => {
-      audio.removeEventListener("playing", markAsPlayed);
-      if (unlockAttached) removeUnlockListeners();
-    };
+      const removeUnlockListeners = () => {
+        UNLOCK_EVENTS.forEach((type) => document.removeEventListener(type, retryOnNextInteraction));
+        cancelPendingUnlock.current = null;
+      };
+
+      UNLOCK_EVENTS.forEach((type) =>
+        document.addEventListener(type, retryOnNextInteraction, { once: true }),
+      );
+      cancelPendingUnlock.current = removeUnlockListeners;
+    });
   }, [bootMode]);
+
+  useEffect(() => {
+    return () => cancelPendingUnlock.current?.();
+  }, []);
 }

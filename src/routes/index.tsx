@@ -25,8 +25,8 @@ export const Route = createFileRoute("/")({ component: Home });
  */
 function Home() {
   const { bootMode, boot } = useBootSequence("initial");
-  // Plays the XP startup chime once, only for the initial "initial" -> null
-  // transition — never for the start button's "start" -> null reboot.
+  // Plays the XP startup chime every time the boot screen finishes and the
+  // desktop appears — the initial load and every Start-button reboot alike.
   useStartupSound(bootMode);
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);

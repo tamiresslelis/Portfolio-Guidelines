@@ -1,8 +1,6 @@
 /**
- * Case-study content. Itaú and both Insense cases use the real decks
- * exported from their source PDFs. Quick Win is still a placeholder deck
- * (see `src/assets/cases/*`) — replace its slides the same way the other
- * three were, once the real artwork is ready.
+ * Case-study content. All four cases use the real decks exported from
+ * their source PDFs (see `src/assets/cases/*`).
  */
 
 import itauSlide01 from "../assets/cases/itau/01-cover.jpg";
@@ -28,11 +26,13 @@ import aiSlide01 from "../assets/cases/insense-ai/01-cover.jpg";
 import aiSlide02 from "../assets/cases/insense-ai/02-project-overview.jpg";
 import aiSlide03 from "../assets/cases/insense-ai/03-ai-review-flow.jpg";
 
-import quickWinSlide01 from "../assets/cases/quick-win/01-cover.svg";
-import quickWinSlide02 from "../assets/cases/quick-win/02-context.svg";
-import quickWinSlide03 from "../assets/cases/quick-win/03-process.svg";
-import quickWinSlide04 from "../assets/cases/quick-win/04-solution.svg";
-import quickWinSlide05 from "../assets/cases/quick-win/05-outcome.svg";
+import quickWinSlide01 from "../assets/cases/quick-win/01-cover.jpg";
+import quickWinSlide02 from "../assets/cases/quick-win/02-question.jpg";
+import quickWinSlide03 from "../assets/cases/quick-win/03-diagnosis.jpg";
+import quickWinSlide04 from "../assets/cases/quick-win/04-user-perception.jpg";
+import quickWinSlide05 from "../assets/cases/quick-win/05-goal.jpg";
+import quickWinSlide06 from "../assets/cases/quick-win/06-usability-issue.jpg";
+import quickWinSlide07 from "../assets/cases/quick-win/07-closing.jpg";
 
 export interface CaseSlideData {
   id: string;
@@ -182,14 +182,45 @@ export const cases: CaseStudy[] = [
   {
     id: "quick-win",
     folderLabel: "Quick Win",
-    title: "Quick Win — Case Study",
-    summary: "Placeholder — swap in the real case study once it's ready.",
+    title: "Ritchie Bros — Quick Win",
+    summary:
+      "A fast usability fix for Ritchie Bros' auction listing page: cutting perceived wait time with clearer loading feedback.",
     slides: [
-      { id: "cover", image: quickWinSlide01, alt: "Quick Win case study cover slide" },
-      { id: "context", image: quickWinSlide02, alt: "Context and problem statement" },
-      { id: "process", image: quickWinSlide03, alt: "Research and design process" },
-      { id: "solution", image: quickWinSlide04, alt: "Final solution overview" },
-      { id: "outcome", image: quickWinSlide05, alt: "Outcomes and impact" },
+      {
+        id: "cover",
+        image: quickWinSlide01,
+        alt: "Cover slide: “Case Ritchie Bros: Quick win,” with the Ritchie Bros (rb) logo and a US flag.",
+      },
+      {
+        id: "question",
+        image: quickWinSlide02,
+        alt: "Question: “How fast do the website have to be?” — team discussion notes suggest checking response times of competitors like Auctiontime, bidadoo, and Purplewave. Alongside: a screenshot of the Ritchie Bros auction-events listing page, showing a grid of auction cards (location, item count, “Bidding open” badges, “View items” buttons).",
+      },
+      {
+        id: "diagnosis",
+        image: quickWinSlide03,
+        alt: "Diagnosis: users wait around 15 seconds to access auction items after clicking “View items,” creating unnecessary friction in a high-intent moment.",
+      },
+      {
+        id: "user-perception",
+        image: quickWinSlide04,
+        alt: "User point of view — users' perception: when a website loads quickly, users perceive it as responsive and easy to use; when it takes too long, they perceive it as slow and unresponsive, negatively impacting their overall experience.",
+      },
+      {
+        id: "goal",
+        image: quickWinSlide05,
+        alt: "Goal: 10 seconds is good enough, so users can freely use the website without worrying about being slowed down by the computer.",
+      },
+      {
+        id: "usability-issue",
+        image: quickWinSlide06,
+        alt: "Usability issue: needs clearer user feedback. When users click “View items,” the interface should provide immediate feedback, such as a loading spinner, since the next page can sometimes take up to 15 seconds to load.",
+      },
+      {
+        id: "closing",
+        image: quickWinSlide07,
+        alt: "Closing slide: “Could we be more than a flyby?” — signed Tamires Lelis.",
+      },
     ],
   },
 ];

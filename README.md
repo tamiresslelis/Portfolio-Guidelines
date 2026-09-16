@@ -158,37 +158,35 @@ to change.
 ## Startup sound
 
 The real XP startup chime (`src/assets/audio/windows-xp-startup.wav`,
-~4.95s — see `src/assets/audio/README.md` for provenance) plays exactly
-once: the first time the *initial* boot finishes and the desktop
-appears. It does **not** play for the start button's reboot, for
-opening/closing/switching cases, for slide navigation, or on any later
-render.
+~4.95s — see `src/assets/audio/README.md` for provenance) plays every
+time the black boot/loading screen finishes and the desktop appears —
+the initial load *and* every subsequent Start-button reboot alike, since
+both are the same transition. It does not play for opening/closing/
+switching cases, for slide navigation, or on any other render.
 
 - `useStartupSound(bootMode)` (`src/hooks/useStartupSound.ts`) watches
-  for the specific `"initial" → null` transition in `bootMode` — the
-  same state `useBootSequence` already owns — rather than "the desktop
-  is visible," so it can't fire for the `"start" → null` transition.
-- A `sessionStorage` flag (`portfolio-startup-sound-played`) makes
-  "already played" durable across re-renders and even a reload within
-  the same tab. Critically, this flag is only set from the audio
-  element's `playing` event — i.e. once sound has *actually* started —
-  never just because `play()` was called. Marking it any earlier means
-  a blocked first attempt permanently "uses up" the one play for the
-  whole session with nothing ever having been heard, which is exactly
-  the bug an earlier version of this hook had.
+  for any transition from a non-null `bootMode` to `null` — the same
+  state `useBootSequence` already owns — rather than "the desktop is
+  visible," so re-renders that don't represent an actual boot ending
+  can't trigger a replay. One `Audio` element is created once and
+  reused (rewound to the start each time) rather than a new one per
+  play.
 - No unmuted sound can autoplay before the visitor has interacted with
   the page at all, in any modern browser — that's browser policy, not
-  something client-side code can override. So the first `play()` call
-  is expected to be rejected on a first visit; the hook catches that
-  and retries once, synchronously inside the visitor's first genuine
-  interaction (`pointerdown`, `pointerup`, `touchend`, `mousedown`, or
-  `keydown` — deliberately more than just `click`, since engines and
-  input types differ on which of these they treat as sufficient
-  activation for unlocking playback). That retry uses plain
-  `addEventListener`/`removeEventListener` rather than newer APIs like
-  `AbortSignal`, so it degrades safely on older engines too. If that
-  retry also fails, the session isn't marked as played, so a later
-  reload gets a fresh chance rather than staying silent forever.
+  something client-side code can override. So only the very first
+  attempt (right after the initial 2s boot, if the visitor hasn't
+  touched the page yet) is likely to be rejected; the hook catches
+  that and retries once, inside the visitor's next genuine interaction
+  (`pointerdown`, `pointerup`, `touchend`, `mousedown`, or `keydown` —
+  deliberately more than just `click`, since engines and input types
+  differ on which of these they treat as sufficient activation for
+  unlocking playback). Once the visitor has interacted with the page
+  at all — which clicking Start itself counts as — the browser's
+  autoplay policy stays unlocked for the rest of the session, so every
+  later reboot plays immediately with no fallback needed. A fresh
+  reboot also cancels any not-yet-retried fallback from a previous one,
+  so an old pending retry can't also fire (double-playing) off of the
+  new transition's own click.
 - Volume is fixed at `0.6`, `loop` is `false`, and every `play()` call
   is wrapped so a browser that doesn't return a Promise from `play()`
   (very old WebKit) can't throw an uncaught error — it's normalized
@@ -224,10 +222,10 @@ them precisely.
 
 ## Case-study assets
 
-Itaú and both Insense cases use their real decks, exported from the
-source PDFs to JPEG. Each slide's `alt` text in `src/data/cases.ts`
-describes what's on it (headline, key stats, screenshots) for
-screen-reader users, since the text lives inside the image.
+All four cases use their real decks, exported from the source PDFs to
+JPEG. Each slide's `alt` text in `src/data/cases.ts` describes what's on
+it (headline, key stats, screenshots) for screen-reader users, since the
+text lives inside the image.
 
 - **Itaú** (`src/assets/cases/itau/`) — 10 slides: cover, business
   context, understanding the existing experience, userflow, usability
@@ -238,9 +236,9 @@ screen-reader users, since the text lives inside the image.
   value-exchange clarity, v1-vs-final, outcome.
 - **Insense AI** (`src/assets/cases/insense-ai/`) — 3 slides: cover,
   project overview, AI review flow.
-- **Quick Win** (`src/assets/cases/quick-win/`) — still a 5-slide
-  placeholder deck (cover, context, process, solution, outcome), same
-  as the other three started out. Waiting on the real case content.
+- **Quick Win** (`src/assets/cases/quick-win/`, Ritchie Bros) — 7
+  slides: cover, question, diagnosis, user perception, goal, usability
+  issue, closing.
 
 The desktop background is the real "Bliss" photo (see
 `src/assets/desktop/README.md` for provenance and size/quality notes);
@@ -260,13 +258,12 @@ shared of the real boot screen and desktop:
   (see the README in that folder for how to swap in a real screenshot
   instead).
 
-**To add or replace slides** (e.g. once Quick Win's real content is
-ready): drop your exported images into the matching
-`src/assets/cases/<case>/` folder and update the `image`/`alt` (and
-optional `caption`) fields in `src/data/cases.ts` — the same way the
-other three cases' real decks were added. The slide count per case
-isn't hardcoded anywhere else, so adding/removing slides just means
-editing that array.
+**To add or replace slides:** drop your exported images into the
+matching `src/assets/cases/<case>/` folder and update the `image`/`alt`
+(and optional `caption`) fields in `src/data/cases.ts` — the same way
+all four cases' real decks were added. The slide count per case isn't
+hardcoded anywhere else, so adding/removing slides just means editing
+that array.
 
 **To add a whole new case-study folder:** add an entry to the `cases`
 array in `src/data/cases.ts` (`id`, `folderLabel`, `title`, `summary`,
