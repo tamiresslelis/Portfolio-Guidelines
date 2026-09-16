@@ -64,12 +64,13 @@ checked off without evidence.
       `useState`/`useCallback` in `routes/index.tsx`, matching the
       brief's conceptual state model — no Redux/Zustand/MobX/
       Context-as-global-store.
-- [x] **The application does not depend on a backend beyond what TanStack
-      Start's own SSR runtime needs.** *(Superseded: the project
-      originally had no server at all.)* There's no database, API, or
-      auth — the server side is purely TanStack Start rendering the same
-      client component tree; see README → "Getting started → production
-      hosting" for what actually hosting that requires.
+- [x] **The application does not depend on a backend.** No database, API,
+      or auth, and as of the GitHub Pages deployment work, no server at
+      runtime either — `prerender: { enabled: true }` (`vite.config.ts`)
+      renders the one route to static HTML at build time, so
+      `dist/client/` is a fully static site (`dist/server/` is a
+      build-time-only implementation detail, never deployed). See README
+      → "Deployment (GitHub Pages)".
 - [ ] **The final implementation follows the supplied Figma design.**
       **Not verifiable from this environment** — the Figma link
       (`oSGVa81H3NHJO0hxS9WAbg`, node `6629-24192`) returns `403` to a
@@ -199,3 +200,65 @@ normal same-origin file URL worked immediately. Fixed by setting
 file URL instead of a data URI — verified in both `npm run dev` and the
 production `npm run build` output (`wallpaper-*.svg` appears as its own
 hashed file, not inlined).
+
+## GitHub Pages deployment
+
+- [x] Inspected the project before changing anything: `package.json`,
+      `vite.config.ts`, `tsr.config.json`, the routes, and the build
+      output confirmed TanStack Start was building an SSR server bundle
+      (`dist/server/server.js`, a generic fetch-handler with no runtime
+      listener) that GitHub Pages can't run, and `dist/client/` had no
+      HTML at all (rendered per-request by that server) — grep across
+      `src/` confirmed zero server functions, loaders, or API routes, so
+      nothing about the app actually needs a server.
+- [x] Configured static output: `prerender: { enabled: true }` on the
+      `tanstackStart()` Vite plugin renders the one route to a real
+      `dist/client/index.html` at build time. Verified this produces
+      complete markup (the actual wallpaper/folders/taskbar DOM, ~9.5KB),
+      not an empty placeholder — an earlier attempt using TanStack
+      Start's `spa: { enabled: true }` option instead produced an
+      almost-empty shell (`_shell.html`) that caused a React hydration
+      mismatch (error #418) in the browser console on load; switching to
+      plain `prerender` fixed that entirely (confirmed via a real
+      browser run: zero console errors, vs. one before).
+- [x] Base path is computed from `GITHUB_REPOSITORY` (set automatically
+      by every GitHub Actions run) in `vite.config.ts` — no repository
+      name hardcoded anywhere. Verified by building with
+      `GITHUB_REPOSITORY=tamiresslelis/Portfolio-Guidelines npm run
+      build`, then serving `dist/client/` from a local static server
+      under a matching `/Portfolio-Guidelines/` subfolder (replicating
+      GitHub Pages' project-site URL shape) and loading it with a real
+      browser: every asset (`styles-*.css`, `index-*.js`, the wallpaper,
+      case slides, the resume PDF, favicon.svg) resolved with the
+      correct prefix, zero failed/4xx/5xx requests, all 5 desktop
+      folders present, and opening a case worked normally.
+- [x] `src/router.tsx` and `src/routes/__root.tsx`'s favicon link both
+      pick up the same base path automatically via Vite's built-in
+      `import.meta.env.BASE_URL`, rather than duplicating the computed
+      value — verified both the default (`/`, local dev) and
+      `/Portfolio-Guidelines/` (simulated CI) cases render correctly.
+- [x] `scripts/postbuild-gh-pages.mjs` (run as part of `npm run build`)
+      copies `index.html` to `404.html` — GitHub Pages' fallback for any
+      unmatched path — and writes an empty `.nojekyll` so GitHub Pages
+      doesn't run Jekyll over the output (which would ignore `_`-prefixed
+      paths by convention). Verified the two files are byte-identical
+      after build.
+- [x] `npm ci && npm run build` verified clean from a fresh
+      `node_modules` (matching what the CI workflow does), plus
+      `tsc --noEmit` and `oxlint` both pass with zero errors/warnings on
+      the final state.
+- [x] `.github/workflows/deploy.yml` triggers on push to `main` and
+      `workflow_dispatch`, has exactly the permissions GitHub's official
+      Pages deployment needs (`contents: read`, `pages: write`,
+      `id-token: write`), uses `actions/checkout`, `actions/setup-node`
+      (`node-version: lts/*`, satisfying `@tanstack/react-start`'s
+      `>=22.12.0` requirement), `npm ci`, `npm run build`,
+      `actions/configure-pages`, `actions/upload-pages-artifact` (path:
+      `dist/client`), and `actions/deploy-pages` — no `gh-pages` npm
+      package involved.
+- [x] The diff for all of this is small and surgical: `package.json`
+      (one script line), `vite.config.ts`, `src/router.tsx`,
+      `src/routes/__root.tsx` (a link href), one new script, one new
+      workflow file. No component, style, content, or behavior changed —
+      confirmed by the browser run above showing the exact same UI as
+      every prior screenshot in this document.

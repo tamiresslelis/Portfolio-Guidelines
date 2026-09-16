@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/postbuild-gh-pages.mjs",
     "preview": "vite preview",
     "lint": "oxlint"
   },

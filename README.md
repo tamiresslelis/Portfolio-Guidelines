@@ -5,8 +5,10 @@ screen, a desktop with case-study "folders," and case studies that open
 in XP-chrome windows with slide navigation.
 
 Built with **React + TypeScript + TanStack Start + Tailwind CSS**, no
-backend beyond what TanStack Start's SSR needs, no global state library
-— see [Architecture](#architecture) for why.
+backend, no global state library — see [Architecture](#architecture) for
+why. Deploys as a fully static site (see
+[Deployment](#deployment--github-pages)) — nothing here needs a server at
+runtime.
 
 See [ACCEPTANCE_CRITERIA.md](ACCEPTANCE_CRITERIA.md) for the checklist
 this build is held to, and its current status.
@@ -33,14 +35,70 @@ fine, but don't rely on that — match the declared requirement for
 anything beyond local experimentation, especially in CI or on a
 deployment host).
 
-## Getting started → production hosting
+## Deployment (GitHub Pages)
 
-`npm run preview` is a local sanity check, not a deployment. TanStack
-Start's server build (`dist/server/`) is a generic Fetch-API handler,
-not a self-starting Node server — to actually host it (Node, Vercel,
-Netlify, Cloudflare, etc.) you need to pick a Nitro deployment preset;
-see the [TanStack Start deployment docs](https://tanstack.com/start/latest/docs/framework/react/hosting)
-for the adapter matching your target.
+Every push to `main` builds and deploys automatically via
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), using
+GitHub's official `actions/*-pages` actions — no `gh-pages` npm package,
+no manual `git push` to a `gh-pages` branch. You can also trigger a
+deploy by hand from the Actions tab (`workflow_dispatch`).
+
+**One-time setup, per repository:** Settings → Pages → Source →
+**GitHub Actions**. That's the only manual step — everything else
+(build, base path, artifact upload, deploy) is handled by the workflow.
+
+This app has no server-only functionality (no loaders, no server
+functions, no APIs) — everything is client-side React state — so it's
+built as a fully static site rather than deployed as a live TanStack
+Start server, which GitHub Pages can't run anyway (it only serves
+static files):
+
+- `vite.config.ts` sets `prerender: { enabled: true }` on the
+  `tanstackStart()` plugin. This makes `vite build` render the app's one
+  route (`/`) to a real `dist/client/index.html` at build time —
+  actual markup, hydrated by the browser from there, not a live
+  server rendering it per-request. `dist/server/` still gets built (the
+  prerender step needs it internally to do that one-time render) but
+  is never deployed — only `dist/client/` is.
+- **Base path:** GitHub Pages serves a project site from
+  `https://<user>.github.io/<repo-name>/`, not the domain root, so every
+  asset and route URL needs that prefix. `vite.config.ts` reads
+  `GITHUB_REPOSITORY` — a variable GitHub Actions sets automatically on
+  every run — to compute `/<repo-name>/` with no repository name
+  hardcoded anywhere and nothing to configure in the workflow. Locally,
+  where that variable doesn't exist, it resolves to `/`, so
+  `npm run dev`/`npm run build` behave exactly as before. The client
+  router (`src/router.tsx`) picks up the same value automatically via
+  Vite's built-in `import.meta.env.BASE_URL`.
+- **Refreshing a route / deep links:** unlike a real server, GitHub
+  Pages can't run app code to handle arbitrary paths, so a hard refresh
+  on anything other than the exact deployed file would 404. The fix is
+  the standard static-host trick: `scripts/postbuild-gh-pages.mjs` (run
+  as part of `npm run build`) copies the built `index.html` to
+  `404.html`. GitHub Pages serves `404.html` for any unmatched path, so
+  the app still boots normally and the router takes it from there. The
+  same script also drops a `.nojekyll` file, which stops GitHub Pages
+  from running its default Jekyll processing over the build output —
+  Jekyll ignores `_`-prefixed files/folders by convention, which could
+  otherwise silently break a future build.
+
+**Local sanity check:** `npm run preview` serves `dist/client/` at the
+domain root (no subpath), which is enough to catch build errors but
+won't reproduce GitHub Pages' `/repo-name/` prefix. To check that
+specifically, build with `GITHUB_REPOSITORY=<user>/<repo> npm run build`
+and serve `dist/client/` from a subfolder matching the repo name.
+
+**If this repository has no Git remote yet:** create the GitHub
+repository first (matching whatever name you used above, or update
+accordingly), then:
+
+```bash
+git remote add origin https://github.com/<user>/<repo>.git
+git push -u origin main
+```
+
+The workflow runs automatically on that push once Pages' source is set
+to GitHub Actions (see above).
 
 ## Project structure
 
@@ -53,7 +111,7 @@ src/
       itau/
       insense-onboarding/
       insense-ai/
-      quick-win/             # placeholder slide artwork — see below
+      quick-win/
     audio/                   # the XP startup chime (see below)
     resume/                  # the original resume PDF (see below)
 
@@ -79,7 +137,7 @@ src/
 
   hooks/
     useBootSequence.ts        # owns the boot-screen timer
-    useStartupSound.ts        # plays the XP chime once, initial boot only
+    useStartupSound.ts        # plays the XP chime on every boot->desktop transition
     useKeyboardNavigation.ts  # ← → to navigate slides, Esc to close
     useSwipeNavigation.ts     # touch swipe to navigate slides
 
@@ -90,6 +148,12 @@ src/
   router.tsx                  # TanStack Router instance
   routeTree.gen.ts             # generated — do not hand-edit
   styles.css                   # Tailwind entry + design tokens (@theme) + keyframes
+
+scripts/
+  postbuild-gh-pages.mjs      # turns the build output into a GitHub Pages-ready static site
+
+.github/workflows/
+  deploy.yml                   # builds + deploys to GitHub Pages on every push to main
 ```
 
 Components are flat files (no per-component CSS Modules folder anymore
