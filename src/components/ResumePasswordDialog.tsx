@@ -7,8 +7,10 @@ interface ResumePasswordDialogProps {
   onUnlock: () => void;
 }
 
-const BIO_TEXT =
-  "I'm currently a Senior Product Designer at Insense. Here, you can explore my career journey from Computer Engineering to Product Design. This page is password-protected. To access my full resume, just send me a message on LinkedIn.";
+const BIO_TEXT_BEFORE_LINK =
+  "I'm currently a Senior Product Designer at Insense. Here, you can explore my career journey from Computer Engineering to Product Design. This page is password-protected. To access my full resume, just send me a message on ";
+
+const LINKEDIN_URL = "https://www.linkedin.com/in/tamireslelis/";
 
 // Not a real secret (this is a static site with no backend) — just a
 // lightweight, memorable gate in front of the full resume, matching the
@@ -117,7 +119,18 @@ export function ResumePasswordDialog({ onClose, onUnlock }: ResumePasswordDialog
             </g>
           </svg>
 
-          <p className="m-0 text-sm leading-relaxed text-[#1a1a1a]">{BIO_TEXT}</p>
+          <p className="m-0 text-sm leading-relaxed text-[#1a1a1a]">
+            {BIO_TEXT_BEFORE_LINK}
+            <a
+              href={LINKEDIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#0000ee] underline hover:text-[#0000aa]"
+            >
+              LinkedIn
+            </a>
+            .
+          </p>
         </div>
 
         <label htmlFor={passwordId} className="mt-4 block text-sm text-[#1a1a1a]">
