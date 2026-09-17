@@ -1,11 +1,24 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 import type { CaseStudy } from "../data/cases";
 import { useKeyboardNavigation } from "../hooks/useKeyboardNavigation";
 import { useSwipeNavigation } from "../hooks/useSwipeNavigation";
-import { CaseSlide } from "./CaseSlide";
 import { SlideNavigation } from "./SlideNavigation";
 import { SlideCounter } from "./SlideCounter";
 import { NavigationTooltip } from "./NavigationTooltip";
+
+// react-pdf/pdfjs-dist is a browser-only library (it touches Canvas, Worker,
+// and a couple of newer JS engine features Node's SSR runtime doesn't have)
+// — a static import here would pull it into the server-rendered bundle too,
+// since ES module imports are evaluated unconditionally when their
+// containing module loads, regardless of whether the component they define
+// actually gets rendered on a given pass. `lazy()` defers the real
+// `import()` until this component is first rendered, which for a case
+// window only ever happens client-side (there's no `activeCase` on the
+// prerendered initial page), and as a bonus code-splits react-pdf +
+// pdfjs-dist out of every visitor's initial bundle entirely.
+const CaseStudyViewer = lazy(() =>
+  import("./case-study/CaseStudyViewer").then((module) => ({ default: module.CaseStudyViewer })),
+);
 
 interface CaseWindowProps {
   caseStudy: CaseStudy;
@@ -21,6 +34,22 @@ interface CaseWindowProps {
 
 const controlButtonBase =
   "flex h-5 w-[22px] items-center justify-center rounded-[2px] text-[11px] leading-none";
+
+/** Shown for the brief moment the code-split react-pdf/pdfjs-dist chunk is
+ *  downloading — a one-time cost per session, before `CaseStudyViewer`
+ *  itself has even mounted (so it can't yet know the PDF's target width to
+ *  reserve exact space the way `PdfPlaceholder` does once it's running). */
+function CaseStudyViewerFallback() {
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <span className="sr-only">Loading case study…</span>
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2 border-[#c7c5b8] border-t-xp-titlebar-start"
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
 
 /**
  * The XP-chrome window that hosts one case study's slides. Owns keyboard
@@ -45,7 +74,6 @@ export function CaseWindow({
   const [isMaximized, setIsMaximized] = useState(false);
 
   const totalSlides = caseStudy.slides.length;
-  const slide = caseStudy.slides[currentSlide];
 
   // Move focus into the window on open, restore it to whatever triggered
   // the open (the desktop folder icon) on close, and start each newly
@@ -142,9 +170,11 @@ export function CaseWindow({
 
       <div
         ref={contentRef}
-        className="relative min-h-0 flex-1 overflow-hidden bg-xp-window-content-bg px-14 py-5 max-[768px]:px-12 max-[768px]:py-4 max-[600px]:px-11 max-[600px]:py-3"
+        className="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-xp-window-content-bg px-14 py-5 max-[768px]:px-12 max-[768px]:py-4 max-[600px]:px-11 max-[600px]:py-3"
       >
-        <CaseSlide slide={slide} />
+        <Suspense fallback={<CaseStudyViewerFallback />}>
+          <CaseStudyViewer caseStudy={caseStudy} currentSlide={currentSlide} />
+        </Suspense>
         <SlideNavigation
           onPrev={handlePrev}
           onNext={handleNext}
