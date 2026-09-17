@@ -364,3 +364,100 @@ file for every screen size.
       re-encoded outputs.
 - [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
       the change in place.
+
+## Case-study PDF rendering (JPG slides → react-pdf)
+
+Root cause: each slide was a JPEG exported from the source deck at one
+fixed resolution, which looked visibly soft on a maximized window or
+any high-DPI display — an image asset has no more detail than it was
+exported with, regardless of how large or sharp a screen displays it.
+Replaced the whole JPG pipeline with `react-pdf`/`pdfjs-dist` rendering
+the real PDFs directly, so every slide renders at whatever resolution
+its actual viewing size and pixel density call for. See
+[README → Case-study rendering](README.md#case-study-rendering-pdf-not-jpg)
+for the full architecture.
+
+- [x] No JPG-conversion step anywhere in the pipeline — the four case
+      PDFs in `public/cases/` are the sole source of slide content;
+      all 27 previous per-slide JPGs were deleted.
+- [x] High-DPI/Retina rendering verified empirically at DPR 1, 2, and
+      3 (via `page.evaluate` reading `devicePixelRatio` and forcing it
+      in a headless run): canvas backing-store size is exactly
+      `min(dpr, 2) × CSS size` in all three cases, confirming both the
+      cap and that `width`/`devicePixelRatio` aren't double-applied.
+- [x] Responsive sizing uses a `ResizeObserver`
+      (`useResponsivePdfWidth`), not `window.innerWidth`. Verified with
+      zero horizontal overflow and a correctly-scaled canvas at 375,
+      390, 430, 768, 1024, 1280, 1440, and 1920px, all against the
+      production build.
+- [x] Efficient rendering: exactly one `<Page>` (one canvas) is ever
+      mounted at a time — confirmed there is no scenario in the code
+      that renders more than the current slide's page.
+- [x] Neighboring pages are prefetched (`usePdfPagePrefetch`, via
+      PDF.js's own cached `pdf.getPage()`) without rendering their
+      canvases, so Prev/Next has no perceptible delay once the
+      document itself has loaded.
+- [x] Loading state reserves the exact pixel space the loaded page will
+      occupy — verified with a route-level artificial delay on the PDF
+      request: the placeholder's box and the final canvas's box match
+      to within rounding (806×453.375 vs 806×453), i.e. no layout
+      shift.
+- [x] Error state (blocked/failed PDF request) shows a clear message,
+      a working Retry button (remounts `<Document>`, successfully
+      recovers once the block is lifted), and an "Open PDF" link with
+      a correct `href` — all verified against a real aborted request.
+- [x] The PDF is lazy-loaded: `CaseWindow.tsx` imports
+      `CaseStudyViewer` via `React.lazy()`, so `react-pdf`/`pdfjs-dist`
+      are absent from the main bundle and only fetched once a case
+      folder is opened — confirmed in the actual `npm run build`
+      output as a separate `CaseStudyViewer-*.js` chunk.
+- [x] This lazy-loading also fixes a real SSR crash: a static import of
+      `react-pdf` executed during the prerender pass, where Node lacks
+      a JS feature (`Iterator`) `pdfjs-dist` 6.x requires. Verified
+      fixed with a fresh Playwright console-error check (zero errors).
+- [x] PDF.js worker configured correctly for both dev and the
+      production build: `pdfjs.GlobalWorkerOptions.workerSrc` is set
+      via `new URL("pdfjs-dist/build/pdf.worker.min.mjs",
+      import.meta.url)` in the same module that renders
+      `<Document>`/`<Page>`. Verified in the production build by
+      watching network responses: the hashed worker asset
+      (`pdf.worker.min-*.mjs`) is requested and returns `200`, with
+      zero console/page errors.
+- [x] Accessibility: each rendered page is wrapped in a `<figure
+      role="img" aria-label={alt}>` carrying the same hand-written
+      `alt` text the JPG slides used; `←`/`→` keyboard navigation and
+      the existing pagination dots/slide counter are unchanged and
+      re-verified working against the PDF-based viewer.
+- [x] Text/annotation layers evaluated, not assumed: briefly enabled
+      both (`renderTextLayer`/`renderAnnotationLayer={true}`) against
+      the real PDFs and found the extracted text layer was garbled
+      (control characters interleaved with real words — subset-encoded
+      fonts with no usable ToUnicode map) and vertically misaligned
+      with the canvas on every span. Left disabled based on that actual
+      finding, not a default assumption — see the code comment in
+      `PdfPage.tsx` for the exact evidence.
+- [x] `react-pdf`'s `suspense` prop (defaults to `true` on both
+      `<Document>` and `<Page>`) was found, via extended DOM-polling
+      against an artificially delayed request, to bubble the loading
+      state up to the ancestor `<Suspense>` boundary from the point
+      above instead of rendering the intended in-place
+      placeholder/error UI. Fixed with `suspense={false}` on both
+      components; reverified afterward that the correctly-sized,
+      in-place placeholder — not the generic outer fallback — is what
+      actually shows.
+- [x] No layout-shift bug from a related React pitfall: `aspectRatio`
+      as a plain numeric inline style is silently invalid CSS (React
+      appends `px` to numbers it doesn't recognize as unitless).
+      `PdfPlaceholder`/`PdfErrorState` compute an explicit pixel height
+      instead — verified via `getComputedStyle` before and after.
+- [x] Vertical scroll works when a page is taller than the viewport
+      (short/wide windows): fixed a flexbox "unreachable overflow" bug
+      by using `items-start` (not `items-center`) on the axis that can
+      overflow, while keeping `justify-center` on the axis that can't.
+- [x] Clean TypeScript throughout the new `case-study/` components and
+      hooks: no `any`, explicit prop types, no unnecessary hooks or
+      premature memoization.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place; the full verification suite above was
+      re-run against the actual production build
+      (`npm run build` + `vite preview`), not just `npm run dev`.

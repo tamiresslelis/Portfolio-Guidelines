@@ -107,11 +107,6 @@ src/
   assets/
     boot/                    # boot screen is CSS/SVG — see the README there
     desktop/                 # wallpaper, flag mark, folder icon (see below)
-    cases/
-      itau/
-      insense-onboarding/
-      insense-ai/
-      quick-win/
     audio/                   # the XP startup chime (see below)
     resume/                  # the original resume PDF (see below)
 
@@ -120,8 +115,13 @@ src/
     DesktopFolder.tsx        # one desktop icon
     Taskbar.tsx              # the taskbar shell
     StartButton.tsx          # the green Start button
-    CaseWindow.tsx           # XP window chrome hosting a case study's slides
-    CaseSlide.tsx            # one slide's artwork + caption
+    CaseWindow.tsx           # XP window chrome hosting a case study's PDF viewer
+    case-study/
+      CaseStudyViewer.tsx    # composition root: sizing, prefetch, current-page state
+      PdfDocument.tsx        # <Document> wrapper: worker config, loading/error, retry
+      PdfPage.tsx            # one rendered PDF page at DPR-capped resolution
+      PdfPlaceholder.tsx     # fixed-size loading placeholder (no layout shift)
+      PdfErrorState.tsx      # error UI + Retry / Open PDF
     SlideNavigation.tsx      # prev/next arrow buttons
     SlideCounter.tsx         # "n / total" readout
     NavigationTooltip.tsx    # first-time "use ← → or swipe" hint
@@ -132,7 +132,7 @@ src/
     timing.ts                # the two boot durations, centralized (see below)
 
   data/
-    cases.ts                 # case-study content model + data
+    cases.ts                 # case-study content model + data (PDF url + per-slide alt text)
     resume.ts                # resume content model + data
 
   hooks/
@@ -140,6 +140,8 @@ src/
     useStartupSound.ts        # plays the XP chime on every boot->desktop transition
     useKeyboardNavigation.ts  # ← → to navigate slides, Esc to close
     useSwipeNavigation.ts     # touch swipe to navigate slides
+    useResponsivePdfWidth.ts  # ResizeObserver-based width for the PDF viewer
+    usePdfPagePrefetch.ts     # warms PDF.js's per-page cache for the neighbors of the current page
 
   routes/
     __root.tsx               # HTML shell, <head> tags, global stylesheet link
@@ -148,6 +150,9 @@ src/
   router.tsx                  # TanStack Router instance
   routeTree.gen.ts             # generated — do not hand-edit
   styles.css                   # Tailwind entry + design tokens (@theme) + keyframes
+
+public/
+  cases/                      # the real case-study PDFs, served as static files (see below)
 
 scripts/
   postbuild-gh-pages.mjs      # turns the build output into a GitHub Pages-ready static site
@@ -220,6 +225,100 @@ to change.
   (`/`) — routing itself isn't a real requirement here, but it's what
   was asked for; `routes/index.tsx` owns the same state
   `Portfolio.tsx` used to.
+
+## Case-study rendering (PDF, not JPG)
+
+Each case study is rendered directly from its real PDF deck via
+[`react-pdf`](https://github.com/wojtekmaj/react-pdf) (a React wrapper
+around Mozilla's `pdfjs-dist`) — there is no JPG-conversion step
+anywhere in the pipeline. This replaced an earlier per-slide-JPEG
+approach, whose fixed export resolution went visibly soft once a slide
+was viewed on a maximized window or a high-DPI display; a PDF has no
+fixed resolution; the same source renders sharp at whatever size and
+pixel density it's asked to draw at.
+
+- **`public/cases/*.pdf`** — one PDF per case (`itau.pdf`,
+  `insense-onboarding.pdf`, `insense-ai.pdf`, `quick-win.pdf`), served
+  as plain static files (Vite's `public/` passthrough), each page in
+  reading order matching that case's `slides` array in
+  `src/data/cases.ts`. They're pre-optimized with Ghostscript
+  (`-dDownsampleColorImages=true -dColorImageResolution=150
+  -dJPEGQ=75 -dDetectDuplicateImages=true`) to keep file size
+  reasonable (1.2–4MB each) without softening the vector text/line art
+  that carries most of each slide's legibility — only embedded raster
+  backgrounds get recompressed.
+- **Rendering pipeline**
+  (`src/components/case-study/CaseStudyViewer.tsx` →
+  `PdfDocument.tsx` → `PdfPage.tsx`): `CaseStudyViewer` measures its
+  container with a `ResizeObserver` (`useResponsivePdfWidth`, capped at
+  1600px — these PDFs' native page width) rather than
+  `window.innerWidth`, since the actual available space can be
+  narrower than the viewport (window padding, a non-maximized floating
+  window). `PdfDocument` owns the PDF.js worker configuration and the
+  `<Document>` element; `PdfPage` renders exactly one `<Page>` for the
+  current slide.
+- **High-DPI/Retina rendering:** `PdfPage` passes react-pdf's own
+  `devicePixelRatio` prop, capped at `Math.min(window.devicePixelRatio
+  || 1, 2)`. That prop independently multiplies the canvas's *backing
+  store* resolution against the CSS size the `width` prop already
+  establishes — passing an already-DPR-multiplied `width` instead would
+  double-apply the multiplier and render the page far larger than
+  intended. The cap exists because a 3×-DPR phone asking for a
+  3×-resolution canvas buys no visible sharpness over 2× at normal
+  viewing distance, for 2.25× the memory/GPU cost.
+- **Lazy loading:** `CaseWindow.tsx` imports `CaseStudyViewer` via
+  `React.lazy()` behind a `<Suspense>` boundary rather than a static
+  top-level import. This does two things at once: it code-splits
+  `react-pdf`/`pdfjs-dist` into their own chunk that only downloads once
+  a case folder is actually opened (confirmed in the production build
+  output as a separate `CaseStudyViewer-*.js` chunk, not part of the
+  main bundle), and it keeps that browser-only library out of the SSR
+  render entirely — a static import would have executed it during the
+  prerender pass too, where it crashes (Node lacks a JS engine feature
+  pdfjs-dist assumes exists).
+- **Prefetching:** `usePdfPagePrefetch` calls PDF.js's own
+  `pdf.getPage(n)` (which internally caches per page number) on the
+  current slide's immediate neighbors — fetching and parsing their page
+  data, but never rendering a canvas for them — so Prev/Next feels
+  instant without ever mounting more than one canvas at a time.
+- **Loading & error states:** `PdfDocument` and `PdfPage` both pass
+  `suspense={false}` to react-pdf's `<Document>`/`<Page>` — react-pdf
+  defaults that prop to `true`, which throws a promise instead of
+  rendering the `loading`/`error` render props, bubbling up to whatever
+  ancestor `<Suspense>` boundary catches it first (here, the
+  code-splitting boundary from the point above) instead of showing
+  these components' own, correctly-sized placeholders. `PdfPlaceholder`
+  reserves the exact pixel space the loaded page will occupy (computed
+  as `width / aspectRatio`, not the CSS `aspect-ratio` property — see
+  the note below) so nothing shifts when the real page swaps in.
+  `PdfErrorState` offers Retry (remounts `<Document>` via a token key)
+  and an "Open PDF" link straight to the file.
+- **Text/annotation layers are disabled** (`renderTextLayer={false}`,
+  `renderAnnotationLayer={false}`) — verified, not assumed: enabling
+  them against these PDFs produced garbled extracted text (control
+  characters interleaved with real words, from subset-encoded fonts
+  with no usable ToUnicode map) with every text span vertically
+  misaligned from its counterpart on the canvas. Each slide's
+  hand-written `alt` text is what assistive tech reads instead, via
+  `role="img"` on the wrapping `<figure>`.
+- **A React inline-style pitfall worth knowing if you touch
+  `PdfPlaceholder`/`PdfErrorState`:** React appends `px` to bare
+  numeric style values it doesn't recognize as unitless, and
+  `aspectRatio` isn't on that (old, pre-dates-the-CSS-property) list —
+  passing a number there is silently invalid CSS and does nothing. Both
+  components compute an explicit pixel `height` instead.
+
+**To add another case study:** export its deck as a single PDF, drop it
+in `public/cases/<id>.pdf`, and add an entry to the `cases` array in
+`src/data/cases.ts` (`id`, `folderLabel`, `title`, `summary`,
+`pdfUrl: casePdfUrl("<id>.pdf")`, and one `{ alt, caption? }` per slide,
+in the same order as the PDF's pages). `Desktop.tsx` and
+`CaseStudyViewer` both key off that array with no per-case code
+anywhere, so nothing else needs to change. If the new deck's page
+proportions aren't 16:9, update `PDF_PAGE_ASPECT_RATIO` in
+`CaseStudyViewer.tsx` (or turn it into a per-case field, if two decks
+ever need different ratios at once) — otherwise the loading placeholder
+briefly shows the wrong shape before the real page swaps in.
 
 ## Startup sound
 
@@ -296,21 +395,23 @@ them precisely.
 
 ## Case-study assets
 
-All four cases use their real decks, exported from the source PDFs to
-JPEG. Each slide's `alt` text in `src/data/cases.ts` describes what's on
+All four cases use their real decks, rendered directly from the source
+PDFs (see [Case-study rendering](#case-study-rendering-pdf-not-jpg)
+above) — there's no separate exported-image asset per slide anymore.
+Each slide's `alt` text in `src/data/cases.ts` still describes what's on
 it (headline, key stats, screenshots) for screen-reader users, since the
-text lives inside the image.
+text lives inside the PDF page rather than as real DOM content.
 
-- **Itaú** (`src/assets/cases/itau/`) — 10 slides: cover, business
+- **Itaú** (`public/cases/itau.pdf`) — 10 slides: cover, business
   context, understanding the existing experience, userflow, usability
   test, usability data analysis, v1-vs-final, accessibility
   specifications, handoff, outcome.
-- **Insense Onboarding** (`src/assets/cases/insense-onboarding/`) — 7
+- **Insense Onboarding** (`public/cases/insense-onboarding.pdf`) — 7
   slides: cover, business context, diagnosis, research signals,
   value-exchange clarity, v1-vs-final, outcome.
-- **Insense AI** (`src/assets/cases/insense-ai/`) — 3 slides: cover,
+- **Insense AI** (`public/cases/insense-ai.pdf`) — 3 slides: cover,
   project overview, AI review flow.
-- **Quick Win** (`src/assets/cases/quick-win/`, Ritchie Bros) — 7
+- **Quick Win** (`public/cases/quick-win.pdf`, Ritchie Bros) — 7
   slides: cover, question, diagnosis, user perception, goal, usability
   issue, closing.
 
@@ -334,19 +435,13 @@ shared of the real boot screen and desktop:
   (see the README in that folder for how to swap in a real screenshot
   instead).
 
-**To add or replace slides:** drop your exported images into the
-matching `src/assets/cases/<case>/` folder and update the `image`/`alt`
-(and optional `caption`) fields in `src/data/cases.ts` — the same way
-all four cases' real decks were added. The slide count per case isn't
+**To add or replace slides within an existing case:** replace the PDF
+at `public/cases/<id>.pdf` and update the `slides` array in
+`src/data/cases.ts` to match its new page order/count — see
+[Case-study rendering](#case-study-rendering-pdf-not-jpg) above for the
+full "add a case study" steps. The slide count per case isn't
 hardcoded anywhere else, so adding/removing slides just means editing
-that array.
-
-**To add a whole new case-study folder:** add an entry to the `cases`
-array in `src/data/cases.ts` (`id`, `folderLabel`, `title`, `summary`,
-`slides`) and drop its artwork in a matching
-`src/assets/cases/<id>/` folder — that's it. `Desktop.tsx` renders one
-folder icon per entry in `cases` automatically, so no component needs
-to change; this is exactly how the Quick Win folder was added.
+that array and the PDF together.
 
 **Note on asset inlining:** `vite.config.ts` sets
 `build.assetsInlineLimit: 0`, so assets like these always resolve to
