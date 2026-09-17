@@ -283,3 +283,52 @@ hashed file, not inlined).
       workflow file. No component, style, content, or behavior changed —
       confirmed by the browser run above showing the exact same UI as
       every prior screenshot in this document.
+
+## Resume password gate
+
+`ResumePasswordDialog` now actually validates a password
+(`src/components/ResumePasswordDialog.tsx`) instead of both buttons
+just closing the dialog. Verified with a real Playwright run:
+
+- [x] Opening the Resume folder shows the password dialog, not the
+      resume, on a fresh visit.
+- [x] An incorrect password shows an inline "Incorrect password.
+      Please try again." message, clears the field, and refocuses it —
+      the dialog stays open, nothing else changes.
+- [x] The correct password reveals the real `ResumeWindow` (confirmed
+      by the resume owner's name being visible) in place of the
+      dialog.
+- [x] Once unlocked, closing and reopening the Resume folder goes
+      straight to the resume — the password prompt doesn't reappear
+      for the rest of that visit.
+- [x] No console/page errors through the whole flow.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place.
+
+## Boot screen redesign
+
+`XPBootScreen.tsx` was redesigned to match a reference boot-screen
+screenshot the project owner shared: the flag mark stacked above a
+centered "Microsoft® / Windows xp / Professional" wordmark (rather
+than the flag positioned beside the text), and a wider, fully rounded
+pill-shaped loading bar. The "Click or Tap to Start" prompt (see
+"Startup sound" above for why it exists) was also made more
+prominent and intuitive: a small cursor/tap icon, bold uppercase
+letter-spaced text, a slow pulsing opacity animation
+(`motion-reduce`-aware, `xp-pulse` in `src/styles.css`), and a
+pointer cursor on the whole overlay while it's showing.
+
+- [x] Visually matches the reference layout (flag on top, stacked
+      wordmark below, pill progress bar) — confirmed via screenshot
+      comparison.
+- [x] The pulsing prompt only animates while `awaitingFirstInteraction`
+      is true; it's fully hidden (`opacity-0`, no animation) once the
+      countdown is running, on both the initial boot and the
+      Start-button reboot.
+- [x] The interaction-gating behavior itself (see "Startup sound"
+      above) is unchanged by the redesign — reverified with a fresh
+      Playwright run: boot overlay stays up indefinitely with no
+      interaction, `play()` still fires exactly once at the moment the
+      overlay clears after the first click.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place.

@@ -358,23 +358,29 @@ doesn't have that problem.
 
 The fourth desktop folder, "Resume," opens `ResumePasswordDialog` — a
 small, non-resizable modal styled after the classic Windows XP network
-credentials prompt ("Connect to &lt;server&gt;"), repurposed as a soft
-gate: a short bio, a "Password required to see full resume" field, and
-OK/Cancel. There's no real backend or password to check on a static
-site, so both buttons just close it — the point isn't validating a
-secret, it's pointing visitors at LinkedIn instead of publishing the
-full resume outright.
+credentials prompt ("Connect to &lt;server&gt;"): a short bio, a
+"Password required to see full resume" field, and OK/Cancel. Cancel,
+the red X, and Escape all dismiss it without unlocking anything.
 
-The original full resume view (`ResumeWindow.tsx` + `src/data/resume.ts`
-— real semantic HTML content, plus a "Download PDF" link to
-`src/assets/resume/tamires-lelis-resume.pdf`) is still in the codebase,
-just not wired to the folder anymore. Swapping `ResumePasswordDialog`
-back for `ResumeWindow` in `Desktop.tsx` (one import, one line) restores
-it if the full resume should be open again later.
+Submitting the correct password (case-insensitive, whitespace-trimmed)
+reveals the real full resume — `ResumeWindow.tsx` + `src/data/resume.ts`,
+real semantic HTML content plus a "Download PDF" link to
+`src/assets/resume/tamires-lelis-resume.pdf` — in place of the dialog.
+A wrong password shows an inline "Incorrect password" message, clears
+the field, and refocuses it instead of closing anything. This isn't
+meaningful security (it's a static site, the check runs entirely in
+the browser) — it's a lightweight, memorable gate in front of the full
+resume, not a real credential.
 
-Opening the resume dialog and opening a case are mutually exclusive
-(see `isResumeOpen` in [Architecture](#architecture)) — only one window
-is ever open at a time, same as everywhere else in the app.
+Once unlocked, it stays unlocked for the rest of that visit
+(`isResumeUnlocked` in `routes/index.tsx`) — reopening the Resume
+folder goes straight to the resume instead of asking again. It only
+resets on a full page reload.
+
+Opening the resume (dialog or, once unlocked, the resume window itself)
+and opening a case are mutually exclusive (see `isResumeOpen` in
+[Architecture](#architecture)) — only one window is ever open at a
+time, same as everywhere else in the app.
 
 ## Accessibility
 
