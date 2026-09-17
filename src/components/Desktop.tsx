@@ -1,7 +1,7 @@
 import type { CaseStudy } from "../data/cases";
 import { DesktopFolder } from "./DesktopFolder";
 import { CaseWindow } from "./CaseWindow";
-import { ResumeWindow } from "./ResumeWindow";
+import { ResumePasswordDialog } from "./ResumePasswordDialog";
 import { Taskbar } from "./Taskbar";
 // The real "Bliss" photo, supplied by the project owner (see
 // src/assets/desktop/README.md for provenance/rights). vite.config.ts
@@ -48,7 +48,7 @@ export function Desktop({
   onOpenResume,
   onCloseResume,
 }: DesktopProps) {
-  const activeWindowTitle = activeCase?.title ?? (isResumeOpen ? "Resume — Tamires Lelis" : null);
+  const activeWindowTitle = activeCase?.title ?? (isResumeOpen ? "Password required" : null);
 
   return (
     <div
@@ -84,7 +84,7 @@ export function Desktop({
         />
       )}
 
-      {isResumeOpen && <ResumeWindow onClose={onCloseResume} />}
+      {isResumeOpen && <ResumePasswordDialog onClose={onCloseResume} />}
 
       <Taskbar onStartClick={onStartClick} activeCaseTitle={activeWindowTitle} />
     </div>

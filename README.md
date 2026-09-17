@@ -346,27 +346,25 @@ doesn't have that problem.
 
 ## Resume
 
-A fourth desktop folder, "Resume," opens `ResumeWindow` — the same XP
-window chrome as a case (title bar, disabled minimize, working
-maximize, working close, Escape to close, focus moved in on open and
-restored on close) but not built on `CaseWindow`: a resume is one long
-scrollable document, not a slideshow, so forcing it through the
-slide-viewer (`CaseSlide`/`SlideNavigation`/dots) wouldn't fit, and
-there's no swipe/arrow-key slide navigation or tooltip here.
+The fourth desktop folder, "Resume," opens `ResumePasswordDialog` — a
+small, non-resizable modal styled after the classic Windows XP network
+credentials prompt ("Connect to &lt;server&gt;"), repurposed as a soft
+gate: a short bio, a "Password required to see full resume" field, and
+OK/Cancel. There's no real backend or password to check on a static
+site, so both buttons just close it — the point isn't validating a
+secret, it's pointing visitors at LinkedIn instead of publishing the
+full resume outright.
 
-- The content (`src/data/resume.ts`) is real, semantic, selectable
-  HTML — not a rasterized image of the CV — so it's screen-reader
-  readable, `Ctrl`/`Cmd`-F searchable, and copy-pasteable. Bold
-  emphasis in the data uses a tiny `**bold**` markdown-lite convention
-  (`renderRichText` in `ResumeWindow.tsx`) rather than a markdown
-  parser dependency.
-- A "Download PDF" link in the window's status bar points at the
-  original file (`src/assets/resume/tamires-lelis-resume.pdf`) via a
-  real `download` attribute, so the exact formatted document is still
-  one click away.
-- Opening the resume and opening a case are mutually exclusive (see
-  `isResumeOpen` in [Architecture](#architecture)) — only one window is
-  ever open at a time, same as everywhere else in the app.
+The original full resume view (`ResumeWindow.tsx` + `src/data/resume.ts`
+— real semantic HTML content, plus a "Download PDF" link to
+`src/assets/resume/tamires-lelis-resume.pdf`) is still in the codebase,
+just not wired to the folder anymore. Swapping `ResumePasswordDialog`
+back for `ResumeWindow` in `Desktop.tsx` (one import, one line) restores
+it if the full resume should be open again later.
+
+Opening the resume dialog and opening a case are mutually exclusive
+(see `isResumeOpen` in [Architecture](#architecture)) — only one window
+is ever open at a time, same as everywhere else in the app.
 
 ## Accessibility
 
