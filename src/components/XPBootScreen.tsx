@@ -18,49 +18,51 @@ interface XPBootScreenProps {
 /**
  * Full-viewport Windows XP boot/loading screen, built entirely with
  * Tailwind utilities and a couple of custom keyframes (src/styles.css):
- * black background, flag + "Microsoft Windows xp Professional" wordmark,
- * an animated loading bar, and the copyright/logo footer lines. Purely
- * presentational — how long it stays on screen is decided by
- * `useBootSequence` (see `src/config/timing.ts`), not by this component.
+ * black background, flag stacked above the "Microsoft Windows xp
+ * Professional" wordmark, an animated loading bar, and the copyright/logo
+ * footer lines — matching the reference boot-screen screenshot (flag on
+ * top, centered wordmark below it) rather than the flag-beside-text
+ * consumer-edition layout. Purely presentational — how long it stays on
+ * screen is decided by `useBootSequence` (see `src/config/timing.ts`), not
+ * by this component.
  */
 export function XPBootScreen({ visible, label, awaitingFirstInteraction }: XPBootScreenProps) {
   return (
     <div
       className={`fixed inset-0 z-100 flex flex-col items-center justify-center bg-black transition-opacity duration-400 ${
         visible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-      }`}
+      } ${awaitingFirstInteraction ? "cursor-pointer" : ""}`}
       role="status"
       aria-live="polite"
       aria-hidden={!visible}
       inert={!visible ? true : undefined}
     >
-      <div className="flex flex-col items-center gap-5 sm:gap-8">
-        <div className="flex items-center gap-3.5 sm:gap-6">
-          <img
-            src={xpFlag}
-            alt=""
-            width={72}
-            height={72}
-            className="w-14 flex-shrink-0 animate-xp-wave motion-reduce:animate-none sm:w-20"
-          />
-          <div className="flex flex-col">
-            <span className="text-[13px] tracking-[0.2px] text-[#e6e6e6] sm:text-[17px]">
-              Microsoft
+      <div className="flex flex-col items-center gap-6 sm:gap-9">
+        <img
+          src={xpFlag}
+          alt=""
+          width={96}
+          height={96}
+          className="w-16 flex-shrink-0 animate-xp-wave motion-reduce:animate-none sm:w-24"
+        />
+
+        <div className="-mt-3 flex flex-col items-center sm:-mt-5">
+          <span className="text-[12px] tracking-[0.2px] text-[#e6e6e6] sm:text-[15px]">
+            Microsoft<sup>®</sup>
+          </span>
+          <div className="flex items-start gap-1.5 leading-none sm:gap-2">
+            <span className="font-[Franklin_Gothic_Medium,Arial_Narrow,var(--font-xp),sans-serif] text-[34px] font-bold tracking-[-0.5px] text-white sm:text-[54px]">
+              Windows
             </span>
-            <div className="flex items-baseline gap-1.5 leading-none sm:gap-2.5">
-              <span className="font-[Franklin_Gothic_Medium,Arial_Narrow,var(--font-xp),sans-serif] text-[32px] font-bold tracking-[-0.5px] text-white italic sm:text-[50px]">
-                Windows
-              </span>
-              <span className="font-[Franklin_Gothic_Medium,Arial_Narrow,var(--font-xp),sans-serif] text-[22px] font-bold text-[#ff7a1a] italic sm:text-[36px]">
-                xp
-              </span>
-            </div>
-            <span className="mt-0.5 text-[14px] text-[#cfcfcf] sm:text-[19px]">Professional</span>
+            <span className="font-[Franklin_Gothic_Medium,Arial_Narrow,var(--font-xp),sans-serif] mt-1 text-[18px] font-bold text-[#ff7a1a] sm:mt-1.5 sm:text-[28px]">
+              xp
+            </span>
           </div>
+          <span className="mt-1 text-[13px] text-[#cfcfcf] sm:mt-1.5 sm:text-[17px]">Professional</span>
         </div>
 
         <div
-          className="relative h-[9px] w-[130px] overflow-hidden rounded-[5px] border border-[#55606c] bg-[#0c0c0c] sm:w-[180px]"
+          className="relative h-[10px] w-[160px] overflow-hidden rounded-full border border-[#55606c] bg-[#0c0c0c] sm:w-[220px]"
           aria-hidden="true"
         >
           <div
@@ -68,9 +70,9 @@ export function XPBootScreen({ visible, label, awaitingFirstInteraction }: XPBoo
               awaitingFirstInteraction ? "left-0" : "animate-xp-slide"
             }`}
           >
-            <span className="h-full w-[13px] rounded-[1px] bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
-            <span className="h-full w-[13px] rounded-[1px] bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
-            <span className="h-full w-[13px] rounded-[1px] bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
+            <span className="h-full w-[15px] rounded-full bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
+            <span className="h-full w-[15px] rounded-full bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
+            <span className="h-full w-[15px] rounded-full bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
           </div>
         </div>
 
@@ -79,14 +81,36 @@ export function XPBootScreen({ visible, label, awaitingFirstInteraction }: XPBoo
             startup chime (useStartupSound) able to play automatically the
             instant the desktop appears, every time, instead of needing a
             second click later. Not part of the authentic XP boot screen,
-            but there's no way to guarantee that without it. */}
-        <p
-          className={`m-0 text-xp-sm text-[#8fa8c9] transition-opacity duration-300 ${
-            awaitingFirstInteraction ? "opacity-100" : "opacity-0"
+            but there's no way to guarantee that without it. Styled as a
+            deliberately eye-catching, pulsing prompt (icon + uppercase,
+            letter-spaced label) rather than a quiet caption, so it reads
+            immediately as something to act on. */}
+        <div
+          className={`flex items-center gap-2.5 transition-opacity duration-300 ${
+            awaitingFirstInteraction ? "animate-xp-pulse opacity-100 motion-reduce:animate-none" : "opacity-0"
           }`}
         >
-          Click or Tap to START
-        </p>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              d="M9 3.5 9 14M9 3.5c3 0 5.5 2.5 5.5 5.5M5.5 10.5v6.5a4 4 0 0 0 4 4h2a4 4 0 0 0 4-4v-4a2 2 0 0 0-2-2h-.5"
+              fill="none"
+              stroke="#8fc4ff"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M17.5 5.5c1.4 1 2.3 2.6 2.3 4.5M19 2.8c2.2 1.5 3.6 4 3.6 6.8"
+              fill="none"
+              stroke="#8fc4ff"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span className="text-[13px] font-semibold tracking-[1.5px] text-[#cfe4ff] uppercase sm:text-[15px]">
+            Click or Tap to Start
+          </span>
+        </div>
       </div>
 
       {/* Boot status ("Starting up…" vs "Loading…") is announced to

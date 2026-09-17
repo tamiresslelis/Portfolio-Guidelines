@@ -59,6 +59,7 @@
   --animate-xp-wave: xp-wave 2.6s ease-in-out infinite;
   --animate-xp-slide: xp-slide 1.1s linear infinite;
   --animate-xp-fade-in: xp-fade-in 250ms ease;
+  --animate-xp-pulse: xp-pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes xp-wave {
@@ -88,6 +89,16 @@
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+@keyframes xp-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
   }
 }
 
