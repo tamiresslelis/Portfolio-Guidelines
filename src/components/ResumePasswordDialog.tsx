@@ -1,26 +1,36 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 interface ResumePasswordDialogProps {
   /** Red X / Cancel / Escape: closes immediately, no boot screen. */
   onClose: () => void;
+  /** Called instead of `onClose` when the submitted password is correct. */
+  onUnlock: () => void;
 }
 
 const BIO_TEXT =
   "I'm currently a Senior Product Designer at Insense. Here, you can explore my career journey from Computer Engineering to Product Design. This page is password-protected. To access my full resume, just send me a message on LinkedIn.";
 
+// Not a real secret (this is a static site with no backend) — just a
+// lightweight, memorable gate in front of the full resume, matching the
+// project owner's own direction.
+const RESUME_PASSWORD = "simba";
+
 /**
  * A small, non-resizable modal styled after the classic Windows XP network
  * credentials prompt ("Connect to <server>") — repurposed here as a
- * lightweight gate in front of the full resume. There's no real backend or
- * password to check (this is a static site), so OK and Cancel both just
- * close it: the point isn't to validate a secret, it's to point visitors at
- * LinkedIn instead of publishing the full resume outright.
+ * lightweight gate in front of the full resume. Typing the correct password
+ * and submitting reveals the full resume (`onUnlock`); Cancel/close/Escape
+ * dismiss the dialog without unlocking anything.
  */
-export function ResumePasswordDialog({ onClose }: ResumePasswordDialogProps) {
+export function ResumePasswordDialog({ onClose, onUnlock }: ResumePasswordDialogProps) {
   const titleId = useId();
   const passwordId = useId();
+  const errorId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const [password, setPassword] = useState("");
+  const [showError, setShowError] = useState(false);
 
   useEffect(() => {
     previouslyFocused.current = document.activeElement as HTMLElement | null;
@@ -82,7 +92,13 @@ export function ResumePasswordDialog({ onClose }: ResumePasswordDialogProps) {
         className="px-5 py-4"
         onSubmit={(event) => {
           event.preventDefault();
-          onClose();
+          if (password.trim().toLowerCase() === RESUME_PASSWORD) {
+            onUnlock();
+            return;
+          }
+          setShowError(true);
+          setPassword("");
+          inputRef.current?.focus();
         }}
       >
         <div className="flex gap-4">
@@ -108,11 +124,26 @@ export function ResumePasswordDialog({ onClose }: ResumePasswordDialogProps) {
           Password required to see full resume
         </label>
         <input
+          ref={inputRef}
           id={passwordId}
           type="password"
           autoComplete="off"
-          className="mt-1.5 w-full rounded-[2px] border border-[#7f9db9] bg-white px-2 py-1 text-sm text-[#1a1a1a] outline-none focus-visible:border-xp-titlebar-start"
+          value={password}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            if (showError) setShowError(false);
+          }}
+          aria-invalid={showError}
+          aria-describedby={showError ? errorId : undefined}
+          className={`mt-1.5 w-full rounded-[2px] border bg-white px-2 py-1 text-sm text-[#1a1a1a] outline-none focus-visible:border-xp-titlebar-start ${
+            showError ? "border-[#c33]" : "border-[#7f9db9]"
+          }`}
         />
+        {showError && (
+          <p id={errorId} role="alert" className="mt-1.5 text-xp-xs text-[#c33]">
+            Incorrect password. Please try again.
+          </p>
+        )}
 
         <div className="mt-5 flex justify-end gap-2">
           <button

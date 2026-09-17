@@ -31,6 +31,7 @@ function Home() {
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
+  const [isResumeUnlocked, setIsResumeUnlocked] = useState(false);
   const [hasSeenNavigationTooltip, setHasSeenNavigationTooltip] = useState(false);
 
   const activeCase = getCaseById(activeCaseId) ?? null;
@@ -56,6 +57,13 @@ function Home() {
 
   const handleCloseResume = useCallback(() => {
     setIsResumeOpen(false);
+  }, []);
+
+  // Once unlocked with the correct password, the resume stays unlocked for
+  // the rest of this visit — reopening the folder goes straight to the
+  // resume instead of asking again.
+  const handleUnlockResume = useCallback(() => {
+    setIsResumeUnlocked(true);
   }, []);
 
   // Start button: always shows the (short) boot screen, whether pressed
@@ -101,8 +109,10 @@ function Home() {
         showNavigationTooltip={activeCase !== null && !hasSeenNavigationTooltip}
         onDismissNavigationTooltip={handleDismissNavigationTooltip}
         isResumeOpen={isResumeOpen}
+        isResumeUnlocked={isResumeUnlocked}
         onOpenResume={handleOpenResume}
         onCloseResume={handleCloseResume}
+        onUnlockResume={handleUnlockResume}
       />
       <XPBootScreen
         visible={bootMode !== null}

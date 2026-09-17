@@ -1,7 +1,9 @@
 import type { CaseStudy } from "../data/cases";
+import { resume } from "../data/resume";
 import { DesktopFolder } from "./DesktopFolder";
 import { CaseWindow } from "./CaseWindow";
 import { ResumePasswordDialog } from "./ResumePasswordDialog";
+import { ResumeWindow } from "./ResumeWindow";
 import { Taskbar } from "./Taskbar";
 // The real "Bliss" photo, supplied by the project owner (see
 // src/assets/desktop/README.md for provenance/rights). vite.config.ts
@@ -23,8 +25,10 @@ interface DesktopProps {
   showNavigationTooltip: boolean;
   onDismissNavigationTooltip: () => void;
   isResumeOpen: boolean;
+  isResumeUnlocked: boolean;
   onOpenResume: () => void;
   onCloseResume: () => void;
+  onUnlockResume: () => void;
 }
 
 /**
@@ -45,10 +49,14 @@ export function Desktop({
   showNavigationTooltip,
   onDismissNavigationTooltip,
   isResumeOpen,
+  isResumeUnlocked,
   onOpenResume,
   onCloseResume,
+  onUnlockResume,
 }: DesktopProps) {
-  const activeWindowTitle = activeCase?.title ?? (isResumeOpen ? "Password required" : null);
+  const activeWindowTitle =
+    activeCase?.title ??
+    (isResumeOpen ? (isResumeUnlocked ? `Resume — ${resume.name}` : "Password required") : null);
 
   return (
     <div
@@ -84,7 +92,12 @@ export function Desktop({
         />
       )}
 
-      {isResumeOpen && <ResumePasswordDialog onClose={onCloseResume} />}
+      {isResumeOpen &&
+        (isResumeUnlocked ? (
+          <ResumeWindow onClose={onCloseResume} />
+        ) : (
+          <ResumePasswordDialog onClose={onCloseResume} onUnlock={onUnlockResume} />
+        ))}
 
       <Taskbar onStartClick={onStartClick} activeCaseTitle={activeWindowTitle} />
     </div>
