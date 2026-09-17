@@ -320,9 +320,11 @@ the rest of the desktop chrome is hand-drawn CSS/SVG rather than bitmap
 screenshots, redrawn to match reference screenshots the project owner
 shared of the real boot screen and desktop:
 
-- `src/assets/desktop/wallpaper.webp` — the real "Bliss" photograph,
-  supplied by the project owner, used as-is at its original 1200×965
-  resolution (~111KB).
+- `src/assets/desktop/wallpaper.webp` (1920×1030, ~143KB) /
+  `wallpaper-mobile.webp` (960×515, ~42KB) — the real "Bliss"
+  photograph, supplied by the project owner. A CSS media query swaps
+  between the two by viewport width (see
+  `src/assets/desktop/README.md`), so only one is ever downloaded.
 - `src/assets/desktop/xp-flag.svg` — the four-color flag mark used in
   the boot screen and the taskbar's start button.
 - `src/assets/desktop/folder-icon.svg` — a redrawn classic yellow folder.

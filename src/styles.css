@@ -108,6 +108,22 @@
     height: 100%;
   }
 
+  /* Serves the smaller wallpaper variant by default and only swaps in the
+     larger desktop one above the same 600px breakpoint used elsewhere in
+     this app (e.g. Desktop.tsx's `max-[600px]:` utilities), so phones
+     aren't made to download a desktop-resolution background image. The
+     two URLs come in as custom properties from Desktop.tsx (Vite resolves
+     the imports to real file URLs; only JS can do that, not this file). */
+  .xp-wallpaper {
+    background-image: var(--wallpaper-mobile);
+  }
+
+  @media (min-width: 601px) {
+    .xp-wallpaper {
+      background-image: var(--wallpaper-desktop);
+    }
+  }
+
   body {
     margin: 0;
     overflow: hidden; /* the desktop metaphor fills the viewport; case

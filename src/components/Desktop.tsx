@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { CaseStudy } from "../data/cases";
 import { resume } from "../data/resume";
 import { DesktopFolder } from "./DesktopFolder";
@@ -7,10 +8,13 @@ import { ResumeWindow } from "./ResumeWindow";
 import { Taskbar } from "./Taskbar";
 // The real "Bliss" photo, supplied by the project owner (see
 // src/assets/desktop/README.md for provenance/rights). vite.config.ts
-// disables asset inlining, so this resolves to a real file URL rather
-// than a data: URI (see the comment there for why that matters for a
-// CSS background-image specifically).
-import wallpaper from "../assets/desktop/wallpaper.webp";
+// disables asset inlining, so these resolve to real file URLs rather
+// than data: URIs (see the comment there for why that matters for a
+// CSS background-image specifically). Two sizes so phones aren't made
+// to download the full desktop-resolution file — see the `.xp-wallpaper`
+// media-query swap in styles.css.
+import wallpaperDesktop from "../assets/desktop/wallpaper.webp";
+import wallpaperMobile from "../assets/desktop/wallpaper-mobile.webp";
 
 interface DesktopProps {
   cases: CaseStudy[];
@@ -60,8 +64,13 @@ export function Desktop({
 
   return (
     <div
-      className="absolute inset-0 overflow-hidden bg-xp-desktop-fallback bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${wallpaper})` }}
+      className="xp-wallpaper absolute inset-0 overflow-hidden bg-xp-desktop-fallback bg-cover bg-center bg-no-repeat"
+      style={
+        {
+          "--wallpaper-mobile": `url(${wallpaperMobile})`,
+          "--wallpaper-desktop": `url(${wallpaperDesktop})`,
+        } as CSSProperties
+      }
     >
       <ul className="absolute inset-0 bottom-[34px] m-0 flex list-none flex-col flex-wrap content-start gap-2 p-10 max-[600px]:bottom-auto max-[600px]:flex-row max-[600px]:p-3">
         {cases.map((caseStudy) => (

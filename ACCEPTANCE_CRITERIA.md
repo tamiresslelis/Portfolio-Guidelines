@@ -332,3 +332,35 @@ pointer cursor on the whole overlay while it's showing.
       overlay clears after the first click.
 - [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
       the change in place.
+
+## Wallpaper quality upgrade
+
+Replaced the 1200×965/111KB wallpaper with a higher-resolution source
+the project owner supplied (a wallpaperswide.com reupload of the same
+"Bliss" photo), split into a desktop and a mobile variant with a CSS
+media-query swap (`.xp-wallpaper` in `src/styles.css`) instead of one
+file for every screen size.
+
+- [x] The source file's "WALLPAPERSWIDE.COM" watermark (baked into the
+      bottom-right corner of the pixels, not a removable overlay) is
+      fully gone from both shipped files — confirmed by cropping and
+      visually inspecting that exact corner of each output.
+- [x] Desktop variant: 1920×1030, ~143KB WebP — a real resolution
+      upgrade over the old 1200×965 file while still small enough not
+      to add meaningfully to page weight (smaller than several
+      case-study slide images already shipped in this repo).
+- [x] Mobile variant: 960×515, ~42KB WebP.
+- [x] Verified with a real Playwright run at two viewports that the
+      browser requests **only** the matching file, never both — a
+      1280px-wide page loads `wallpaper-*.webp` and never touches
+      `wallpaper-mobile-*.webp`, and a 390px-wide page does the
+      reverse. Confirms this is an actual bandwidth saving on mobile,
+      not just a visual swap of an already-downloaded image.
+- [x] `background-size: cover` still handles cropping within whichever
+      file loads — unchanged from before, so no visual distortion at
+      any viewport.
+- [x] The raw, watermarked source files supplied for processing were
+      not committed to the repo — only the final cropped/resized/
+      re-encoded outputs.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place.
