@@ -461,3 +461,106 @@ for the full architecture.
       the change in place; the full verification suite above was
       re-run against the actual production build
       (`npm run build` + `vite preview`), not just `npm run dev`.
+
+## Resizable case window + page-transition loading
+
+Added mouse resizing to the case window (all 4 edges + 4 corners) and a
+translucent loading overlay for slow Next/Prev transitions, without
+redesigning the XP chrome. See
+[README → Resizable case window](README.md#resizable-case-window) and
+[README → Page-transition loading](README.md#page-transition-loading)
+for the architecture.
+
+- [x] All 4 edges and all 4 corners resize the window — verified with
+      real pointer drags at each of the 8 handles, checking the exact
+      resulting width/height/position delta after each one.
+- [x] Correct resize cursor per handle (`ew-resize`/`ns-resize`/
+      `nwse-resize`/`nesw-resize`), confirmed via `getComputedStyle`.
+- [x] Minimum size (600×450) enforced — verified by dragging the right
+      edge far enough left to try to go below it; width stopped at
+      exactly 600.
+- [x] Maximum size (viewport, minus the 34px taskbar on height)
+      enforced — verified by dragging past the visible viewport in both
+      directions; the window's edge stopped exactly at the viewport
+      boundary instead of extending past it, and re-clamps on the
+      browser's own `resize` event too.
+- [x] The PDF automatically re-renders at the new width via the
+      existing `ResizeObserver`-driven `useResponsivePdfWidth` — no
+      window-specific PDF code was needed. Verified the canvas stays
+      sharp and at the correct 16:9 aspect ratio after a resize
+      (measured aspect ratio ~1.780 vs. the true 1.778).
+- [x] Resizing doesn't hammer react-pdf: `useResponsivePdfWidth` now
+      debounces every width change after the first by 80ms, so a fast
+      pointer drag doesn't trigger dozens of re-rasterizations —
+      confirmed the window itself still tracks the pointer at full
+      frame rate (via `requestAnimationFrame`) independent of that
+      debounce.
+- [x] Resize handles use Pointer Events + `setPointerCapture` (no
+      `window`-level listeners, nothing to leak) — a handle keeps
+      receiving move/up events even once the cursor leaves its few
+      -pixel-wide hit area.
+- [x] A real correctness bug was found and fixed during verification:
+      the content area's `position: relative` (for its own absolutely
+      -positioned nav arrows) made it paint *over* the resize handles
+      on 3 of 4 edges, despite the handles coming first in the DOM —
+      CSS stacking order between positioned siblings doesn't follow DOM
+      order the way it does against `position: static` content. Fixed
+      by giving the handles the same `z-10` level `SlideNavigation`'s
+      arrows already use, and bumping the title-bar buttons and
+      pagination dots to the same level so they keep winning the tie
+      (they come later in the DOM) wherever a handle's hit zone happens
+      to overlap them.
+- [x] Double-clicking the title bar maximizes; double-clicking again
+      restores to the exact previous custom size (verified: a window
+      resized to 920×640, then maximized and restored, came back to
+      920×640 exactly) — the existing Maximize button is unchanged.
+- [x] Mobile (≤600px) never renders resize handles — verified a
+      390px-wide viewport shows zero handle elements and the window
+      still fills the viewport via the pre-existing responsive layout,
+      unchanged from before this feature.
+- [x] A translucent "Loading next slide…" / "Loading previous slide…"
+      overlay (with a spinner) appears over the *still-visible* old
+      page — not a blank white flash — whenever a page takes long
+      enough to render to notice. Verified under artificial CPU
+      throttling: the previous page's canvas plus a second, hidden
+      canvas for the incoming page are both mounted during the
+      transition, and the overlay text matches the actual navigation
+      direction ("next" when moving forward, "previous" when moving
+      backward).
+- [x] The loading state is wired to react-pdf's real
+      `onRenderSuccess`/`onRenderError` callbacks, not a fixed
+      `setTimeout` — confirmed the overlay disappears at the exact
+      moment the background page finishes rendering, whether that's
+      near-instant (a prefetched neighbor) or artificially slow (CPU
+      -throttled, jumping to a distant, non-prefetched page).
+- [x] Rapid navigation can't create a race: Next/Prev/pagination are
+      disabled (verified via `aria-disabled`/native `disabled`) for the
+      whole duration of a page render, and a background render's
+      completion is checked against what its slot is *currently*
+      targeting before being accepted — a stale completion for a page
+      the visitor already navigated away from is ignored. Verified with
+      real (non-forced) rapid clicks under heavy CPU throttling: exactly
+      one canvas remains mounted once everything settles, with no
+      console errors.
+- [x] Exactly one canvas is mounted while idle; a second, hidden one
+      only exists for the duration of an actual transition — verified
+      directly via `document.querySelectorAll`, including a regression
+      found and fixed where both slots re-rendering unconditionally on
+      mount caused a spurious no-op "promotion" the moment the page
+      first opened.
+- [x] Accessibility: the loading message is a `role="status"
+      aria-live="polite"` element; Next/Prev keep their existing
+      `aria-label`s regardless of disabled state; `←`/`→` keyboard
+      navigation continues to work (and is itself gated by the same
+      rendering-in-progress check).
+- [x] No new magic numbers: window sizing/breakpoint constants live in
+      `src/config/window.ts`, matching the existing `src/config/
+      timing.ts` pattern.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place; the full verification suite above (all 8
+      resize directions, min/max clamping, all 8 required breakpoints,
+      DPR 1/2/3 cap, mobile handle absence, double-click maximize/
+      restore, loading overlay + direction copy, disabled-button
+      race-condition check) was re-run against the actual production
+      build (`npm run build` + `vite preview`), with zero console/page
+      errors throughout.

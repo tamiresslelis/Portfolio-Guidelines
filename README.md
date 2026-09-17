@@ -116,12 +116,14 @@ src/
     Taskbar.tsx              # the taskbar shell
     StartButton.tsx          # the green Start button
     CaseWindow.tsx           # XP window chrome hosting a case study's PDF viewer
+    ResizeHandles.tsx        # the 8 invisible edge/corner drag zones for CaseWindow
     case-study/
-      CaseStudyViewer.tsx    # composition root: sizing, prefetch, current-page state
+      CaseStudyViewer.tsx    # composition root: sizing, prefetch, page-buffer, current-page state
       PdfDocument.tsx        # <Document> wrapper: worker config, loading/error, retry
       PdfPage.tsx            # one rendered PDF page at DPR-capped resolution
       PdfPlaceholder.tsx     # fixed-size loading placeholder (no layout shift)
       PdfErrorState.tsx      # error UI + Retry / Open PDF
+      PageLoadingOverlay.tsx # translucent "Loading next/previous slide…" overlay
     SlideNavigation.tsx      # prev/next arrow buttons
     SlideCounter.tsx         # "n / total" readout
     NavigationTooltip.tsx    # first-time "use ← → or swipe" hint
@@ -130,6 +132,7 @@ src/
 
   config/
     timing.ts                # the two boot durations, centralized (see below)
+    window.ts                # case window min/max sizing + the mobile/resize breakpoint
 
   data/
     cases.ts                 # case-study content model + data (PDF url + per-slide alt text)
@@ -140,8 +143,10 @@ src/
     useStartupSound.ts        # plays the XP chime on every boot->desktop transition
     useKeyboardNavigation.ts  # ← → to navigate slides, Esc to close
     useSwipeNavigation.ts     # touch swipe to navigate slides
-    useResponsivePdfWidth.ts  # ResizeObserver-based width for the PDF viewer
+    useResponsivePdfWidth.ts  # ResizeObserver-based, debounced width for the PDF viewer
     usePdfPagePrefetch.ts     # warms PDF.js's per-page cache for the neighbors of the current page
+    usePdfPageBuffer.ts       # two-slot double buffer behind the page-transition loading overlay
+    useResizableWindow.ts     # pointer-driven edge/corner resizing for CaseWindow
 
   routes/
     __root.tsx               # HTML shell, <head> tags, global stylesheet link
@@ -320,6 +325,99 @@ proportions aren't 16:9, update `PDF_PAGE_ASPECT_RATIO` in
 ever need different ratios at once) — otherwise the loading placeholder
 briefly shows the wrong shape before the real page swaps in.
 
+## Resizable case window
+
+On desktop (above `MOBILE_WINDOW_BREAKPOINT_PX` = 600px, see
+`src/config/window.ts`), the case window can be resized by dragging any
+of its four edges or four corners, in addition to the existing Maximize
+button — double-clicking the title bar also toggles maximize/restore,
+returning to whatever custom size was set before maximizing rather than
+the default centered one.
+
+- **`src/hooks/useResizableWindow.ts`** owns all of the drag mechanics:
+  Pointer Events + `setPointerCapture` (not `window`-level mousemove/
+  mouseup listeners) so a handle keeps receiving `pointermove`/
+  `pointerup` even once the cursor leaves its few-pixel-wide hit area,
+  with zero manual listener add/remove. Pointer-driven size updates are
+  batched through `requestAnimationFrame` (one visual update per frame,
+  not per pointermove event) and clamped to `MIN_CASE_WINDOW_WIDTH_PX`/
+  `MIN_CASE_WINDOW_HEIGHT_PX` on the small end and the current
+  viewport (minus the taskbar) on the large end — re-clamped on the
+  browser's own `resize` event too, so a previously custom-sized window
+  can never end up bigger than a shrunk browser window. All of this
+  state is local to `CaseWindow` — dragging a handle only re-renders
+  that window, not the rest of the app.
+- **`src/components/ResizeHandles.tsx`** renders the eight drag zones:
+  6px-thick edge strips and 14px corner squares, fully invisible (no
+  background/border — only the cursor changes) to stay faithful to the
+  XP chrome rather than adding modern-looking resize handles. They're
+  positioned *inside* the window's own rounded/clipped box (not hanging
+  outside it), and rely on `z-10` — the same stacking level
+  `SlideNavigation`'s arrow buttons already use — placed earlier in the
+  DOM than the window's real controls, so any real button, nav arrow, or
+  pagination dot that happens to overlap a handle's hit zone still wins
+  the click (CSS stacking, not DOM order, decides paint order between
+  positioned elements — see the comment in that file for the full
+  reasoning). Below the resulting ~600×450 minimum, dragging a handle
+  further doesn't shrink the window past what the title bar, footer, and
+  a legible PDF area need.
+- **The PDF responds to a resize automatically**, through the same
+  `ResizeObserver`-driven `useResponsivePdfWidth` described above — no
+  special-case code was needed for resizing specifically. That hook now
+  also debounces (80ms) every width change *after* the first one, so
+  dragging a handle doesn't ask react-pdf to re-rasterize the page
+  dozens of times per second; the window itself still tracks the
+  pointer at a full frame rate, only the (comparatively expensive) PDF
+  re-render is throttled.
+- **Disabled entirely on mobile:** `useResizableWindow` watches its own
+  `(max-width: 600px)` media query and reports `isResizingEnabled: false`
+  below it, regardless of what `CaseWindow` asks for — `CaseWindow`
+  skips rendering `<ResizeHandles>` and falls back to the existing
+  full-viewport responsive layout in that case, exactly as before this
+  feature existed.
+
+## Page-transition loading
+
+Clicking Next/Prev (or a pagination dot, or `←`/`→`) now shows a
+translucent "Loading next slide…" / "Loading previous slide…" overlay,
+with a spinner, whenever rendering the requested page takes long enough
+to notice — the previous page stays visible underneath rather than
+blanking to white.
+
+- **The problem this solves:** react-pdf's `<Page>` re-fetches/
+  re-renders whenever its `pageNumber` prop changes, and — regardless of
+  whether that page's data is already cached — briefly shows its
+  `loading` fallback in place of the *previous* page's canvas while it
+  does. There's no supported way to make a single `<Page>` instance keep
+  showing its old content while loading a new page number.
+- **`src/hooks/usePdfPageBuffer.ts`** solves this with a small two-slot
+  double buffer: two fixed "slots," each rendered as its own
+  `<PdfPage>` by `CaseStudyViewer`. Only one slot is ever visible; a
+  page-number change reassigns the *other* (currently hidden) slot and
+  renders it off-screen, and only once it actually finishes rendering
+  (a real `onRenderSuccess` callback, never a fixed `setTimeout`) does
+  the hook flip which slot is "active." A slot's own `pageNumber` prop
+  is only ever reassigned while it's hidden — never while it's the one
+  on screen — which is what keeps the visible page from ever
+  re-triggering react-pdf's own loading flash. The background slot only
+  mounts while a transition is actually in flight, so idle viewing still
+  costs exactly one canvas, matching the "never render every page at
+  once" rule from the PDF rendering work above.
+- **Rapid navigation is handled two ways at once:** Next/Prev/pagination
+  are disabled (`isPageRendering`, bubbled up from `CaseStudyViewer` to
+  `CaseWindow`) while a page is rendering, so a real click can't queue a
+  second in-flight render; independently, the hidden slot's target is
+  always whatever page was most recently requested, so even a
+  keyboard-repeat or another out-of-band trigger simply retargets the
+  same in-flight background render instead of starting a second one —
+  and a completion callback for a page the visitor has since navigated
+  away from is detected and ignored (checked against what the slot is
+  *currently* assigned to, not what it was assigned to when the render
+  started).
+- **Accessibility:** the overlay's message is in a `role="status"
+  aria-live="polite"` element, and the Next/Prev buttons keep their
+  existing `aria-label`s regardless of their disabled state.
+
 ## Startup sound
 
 The real XP startup chime (`src/assets/audio/windows-xp-startup.wav`,
@@ -497,9 +595,12 @@ time, same as everywhere else in the app.
 
 - Desktop icons run in a left-hand column above ~600px, and wrap into a
   horizontal row near the top on narrower screens.
-- The case window is a centered, fixed-size floating window above
-  ~600px, and expands to fill the viewport (minus the taskbar) below
-  that, with larger (44px) touch targets for the prev/next controls.
+- The case window is a centered, manually resizable floating window
+  (see [Resizable case window](#resizable-case-window)) above ~600px,
+  and expands to fill the viewport (minus the taskbar) below that, with
+  larger (44px) touch targets for the prev/next controls and no resize
+  handles at all — the same ~600px breakpoint both switches the layout
+  and turns resizing off.
 - The taskbar collapses the "start" label to just its icon below 480px
   to leave room for the active-case button and the "Product Design
   Portfolio" label.
