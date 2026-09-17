@@ -1,10 +1,13 @@
-import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import type { CaseStudy } from "../data/cases";
 import { useKeyboardNavigation } from "../hooks/useKeyboardNavigation";
 import { useSwipeNavigation } from "../hooks/useSwipeNavigation";
+import { useResizableWindow } from "../hooks/useResizableWindow";
+import { MIN_CASE_WINDOW_WIDTH_PX, MIN_CASE_WINDOW_HEIGHT_PX, TASKBAR_HEIGHT_PX } from "../config/window";
 import { SlideNavigation } from "./SlideNavigation";
 import { SlideCounter } from "./SlideCounter";
 import { NavigationTooltip } from "./NavigationTooltip";
+import { ResizeHandles } from "./ResizeHandles";
 
 // react-pdf/pdfjs-dist is a browser-only library (it touches Canvas, Worker,
 // and a couple of newer JS engine features Node's SSR runtime doesn't have)
@@ -32,8 +35,12 @@ interface CaseWindowProps {
   onDismissNavigationTooltip: () => void;
 }
 
+// `relative z-10`: the title-bar's near-invisible resize handle (see
+// ResizeHandles.tsx) shares this same z-index and comes earlier in the
+// DOM, so these buttons — later, at the same level — win the tie
+// wherever a handle's hit zone happens to overlap them.
 const controlButtonBase =
-  "flex h-5 w-[22px] items-center justify-center rounded-[2px] text-[11px] leading-none";
+  "relative z-10 flex h-5 w-[22px] items-center justify-center rounded-[2px] text-[11px] leading-none";
 
 /** Shown for the brief moment the code-split react-pdf/pdfjs-dist chunk is
  *  downloading — a one-time cost per session, before `CaseStudyViewer`
@@ -72,16 +79,31 @@ export function CaseWindow({
   const contentRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
+  // True while CaseStudyViewer's background page buffer is still
+  // rendering the requested page (see usePdfPageBuffer) — used to disable
+  // Next/Prev/pagination/keyboard nav so rapid clicks can't pile up
+  // multiple in-flight page renders at once.
+  const [isPageRendering, setIsPageRendering] = useState(false);
 
   const totalSlides = caseStudy.slides.length;
 
+  const { rect, isResizing, isResizingEnabled, getHandleProps, resetRect } = useResizableWindow({
+    windowRef,
+    minWidth: MIN_CASE_WINDOW_WIDTH_PX,
+    minHeight: MIN_CASE_WINDOW_HEIGHT_PX,
+    taskbarHeightPx: TASKBAR_HEIGHT_PX,
+    disabled: isMaximized,
+  });
+
   // Move focus into the window on open, restore it to whatever triggered
   // the open (the desktop folder icon) on close, and start each newly
-  // opened case un-maximized regardless of how the previous one was left.
+  // opened case un-maximized and at its default size regardless of how the
+  // previous one was left.
   useEffect(() => {
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     windowRef.current?.focus();
     setIsMaximized(false);
+    resetRect();
 
     return () => {
       previouslyFocused.current?.focus?.();
@@ -93,33 +115,58 @@ export function CaseWindow({
     setIsMaximized((maximized) => !maximized);
   };
 
-  const handlePrev = () => {
-    onDismissNavigationTooltip();
-    onPrev();
+  // Double-clicking the title bar (excluding the window-control buttons,
+  // which already have their own single-click handlers) mirrors a real
+  // desktop OS's maximize/restore gesture.
+  const handleTitleBarDoubleClick = () => {
+    handleToggleMaximize();
   };
 
-  const handleNext = () => {
+  const handlePrev = useCallback(() => {
+    if (isPageRendering) return;
+    onDismissNavigationTooltip();
+    onPrev();
+  }, [isPageRendering, onDismissNavigationTooltip, onPrev]);
+
+  const handleNext = useCallback(() => {
+    if (isPageRendering) return;
     onDismissNavigationTooltip();
     onNext();
+  }, [isPageRendering, onDismissNavigationTooltip, onNext]);
+
+  const handleGoToSlide = (index: number) => {
+    if (isPageRendering) return;
+    onDismissNavigationTooltip();
+    onGoToSlide(index);
   };
 
   useKeyboardNavigation(true, { onPrev: handlePrev, onNext: handleNext, onClose });
   useSwipeNavigation(contentRef, { onSwipeLeft: handleNext, onSwipeRight: handlePrev });
 
+  const windowStyle: CSSProperties | undefined =
+    rect && !isMaximized
+      ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height, transform: "none" }
+      : undefined;
+
+  const windowClassName =
+    (isMaximized
+      ? "absolute top-0 left-0 z-10 flex h-[calc(100dvh-34px)] w-screen flex-col overflow-hidden bg-xp-window-bg outline-none"
+      : windowStyle
+        ? "absolute z-10 flex flex-col overflow-hidden rounded-xp-window border border-xp-window-border bg-xp-window-bg shadow-xp-window outline-none"
+        : "absolute top-1/2 left-1/2 z-10 flex h-[min(640px,86dvh)] w-[min(920px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xp-window border border-xp-window-border bg-xp-window-bg shadow-xp-window outline-none max-[600px]:top-0 max-[600px]:left-0 max-[600px]:h-[calc(100dvh-34px)] max-[600px]:w-screen max-[600px]:translate-x-0 max-[600px]:translate-y-0 max-[600px]:rounded-none") +
+    // Dragging a resize handle fast enough can otherwise select the title
+    // text or slide caption underneath the pointer — suppressed only while
+    // a drag is actually in progress.
+    (isResizing ? " select-none" : "");
+
   return (
-    <div
-      ref={windowRef}
-      className={
-        isMaximized
-          ? "absolute top-0 left-0 z-10 flex h-[calc(100dvh-34px)] w-screen flex-col overflow-hidden bg-xp-window-bg outline-none"
-          : "absolute top-1/2 left-1/2 z-10 flex h-[min(640px,86dvh)] w-[min(920px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xp-window border border-xp-window-border bg-xp-window-bg shadow-xp-window outline-none max-[600px]:top-0 max-[600px]:left-0 max-[600px]:h-[calc(100dvh-34px)] max-[600px]:w-screen max-[600px]:translate-x-0 max-[600px]:translate-y-0 max-[600px]:rounded-none"
-      }
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      tabIndex={-1}
-    >
-      <div className="flex h-8 flex-shrink-0 items-center gap-2 border-b border-xp-window-border bg-linear-to-b from-xp-titlebar-mid via-xp-titlebar-start via-45% to-xp-titlebar-end py-0 pr-1.5 pl-2.5">
+    <div ref={windowRef} className={windowClassName} style={windowStyle} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
+      {isResizingEnabled && !isMaximized && <ResizeHandles getHandleProps={getHandleProps} />}
+
+      <div
+        className="flex h-8 flex-shrink-0 items-center gap-2 border-b border-xp-window-border bg-linear-to-b from-xp-titlebar-mid via-xp-titlebar-start via-45% to-xp-titlebar-end py-0 pr-1.5 pl-2.5"
+        onDoubleClick={handleTitleBarDoubleClick}
+      >
         <span className="h-4 w-4 flex-shrink-0 rounded-[2px] bg-[#ffd45e]" aria-hidden="true" />
         <h2
           id={titleId}
@@ -128,7 +175,7 @@ export function CaseWindow({
         >
           {caseStudy.title}
         </h2>
-        <div className="flex flex-shrink-0 gap-[3px]">
+        <div className="flex flex-shrink-0 gap-[3px]" onDoubleClick={(event) => event.stopPropagation()}>
           {/* Minimize: present for authentic XP chrome, but visually
               disabled — this window only supports closing (X / Escape). */}
           <span
@@ -173,13 +220,17 @@ export function CaseWindow({
         className="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-xp-window-content-bg px-14 py-5 max-[768px]:px-12 max-[768px]:py-4 max-[600px]:px-11 max-[600px]:py-3"
       >
         <Suspense fallback={<CaseStudyViewerFallback />}>
-          <CaseStudyViewer caseStudy={caseStudy} currentSlide={currentSlide} />
+          <CaseStudyViewer
+            caseStudy={caseStudy}
+            currentSlide={currentSlide}
+            onPageRenderingChange={setIsPageRendering}
+          />
         </Suspense>
         <SlideNavigation
           onPrev={handlePrev}
           onNext={handleNext}
-          canPrev={currentSlide > 0}
-          canNext={currentSlide < totalSlides - 1}
+          canPrev={currentSlide > 0 && !isPageRendering}
+          canNext={currentSlide < totalSlides - 1 && !isPageRendering}
         />
         <NavigationTooltip visible={showNavigationTooltip} onDismiss={onDismissNavigationTooltip} />
       </div>
@@ -190,11 +241,12 @@ export function CaseWindow({
             <button
               key={s.id}
               type="button"
-              onClick={() => {
-                onDismissNavigationTooltip();
-                onGoToSlide(index);
-              }}
-              className={`h-2 w-2 rounded-full border p-0 ${
+              onClick={() => handleGoToSlide(index)}
+              disabled={isPageRendering}
+              // `relative z-10`: see the comment on `controlButtonBase`
+              // above — same reasoning, so the south-edge resize handle
+              // can never make a dot unclickable.
+              className={`relative z-10 h-2 w-2 rounded-full border p-0 disabled:cursor-default ${
                 index === currentSlide
                   ? "border-xp-titlebar-start bg-xp-titlebar-start"
                   : "border-[#8a8a7a] bg-white"

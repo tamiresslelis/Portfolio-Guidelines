@@ -1,4 +1,4 @@
-import { Page } from "react-pdf";
+import { Page, type PageProps } from "react-pdf";
 import { PdfPlaceholder } from "./PdfPlaceholder";
 
 // Caps how many physical pixels the canvas backing store renders at.
@@ -7,6 +7,9 @@ import { PdfPlaceholder } from "./PdfPlaceholder";
 // memory/GPU cost — see PdfPage's usage below and the DPR explanation in
 // the project README.
 const MAX_DEVICE_PIXEL_RATIO = 2;
+
+type PdfPageRenderSuccess = NonNullable<PageProps["onRenderSuccess"]>;
+type PdfPageRenderError = NonNullable<PageProps["onRenderError"]>;
 
 interface PdfPageProps {
   pageNumber: number;
@@ -21,6 +24,13 @@ interface PdfPageProps {
    *  the module doc comment for why. */
   alt: string;
   caption?: string;
+  /** Fires once this exact page has finished rasterizing to its canvas.
+   *  `CaseStudyViewer`'s page buffer (`usePdfPageBuffer`) uses this to know
+   *  when a page rendering off-screen is actually ready to be swapped in —
+   *  a `pageNumber` prop change alone isn't a reliable "ready" signal, see
+   *  that hook for why. */
+  onRenderSuccess?: PdfPageRenderSuccess;
+  onRenderError?: PdfPageRenderError;
 }
 
 /**
@@ -33,7 +43,7 @@ interface PdfPageProps {
  * assumed: enabling them against these PDFs (exported from a design tool
  * with subset-encoded fonts) produced a text layer whose extracted
  * content was garbled — control characters interleaved with the visible
- * words (e.g. "Case ItaúForeign CurrencyTransactions") — because
+ * words (e.g. "Case ItaúForeign CurrencyTransactions") — because
  * the fonts carry no usable ToUnicode mapping, and every extracted span
  * was vertically misaligned with its counterpart on the canvas. Turning
  * the layers on here would add selection/search UI for text that
@@ -44,7 +54,15 @@ interface PdfPageProps {
  * over from the previous JPG-based slides almost unchanged) is what
  * assistive tech reads instead, via `role="img"`.
  */
-export function PdfPage({ pageNumber, width, aspectRatio, alt, caption }: PdfPageProps) {
+export function PdfPage({
+  pageNumber,
+  width,
+  aspectRatio,
+  alt,
+  caption,
+  onRenderSuccess,
+  onRenderError,
+}: PdfPageProps) {
   if (!width) return null;
 
   const devicePixelRatio = Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO);
@@ -66,6 +84,8 @@ export function PdfPage({ pageNumber, width, aspectRatio, alt, caption }: PdfPag
         // promise instead of rendering `loading` below.
         suspense={false}
         loading={<PdfPlaceholder width={width} aspectRatio={aspectRatio} />}
+        onRenderSuccess={onRenderSuccess}
+        onRenderError={onRenderError}
         className="border border-black/15 bg-white"
       />
       {caption && (

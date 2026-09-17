@@ -1,4 +1,12 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
+
+// How long to wait after the container stops changing size before actually
+// applying the new width. The window-resize drag (see useResizableWindow)
+// can fire a ResizeObserver callback dozens of times per second while the
+// pointer is moving; without this, every one of those would ask react-pdf
+// to re-rasterize the page at a new scale. The very first measurement
+// (below) skips this delay so the initial PDF render isn't held up by it.
+const RESIZE_DEBOUNCE_MS = 80;
 
 /**
  * Tracks a container's available width via `ResizeObserver` (not
@@ -14,6 +22,8 @@ export function useResponsivePdfWidth(
   maxWidth: number,
 ): number {
   const [width, setWidth] = useState(0);
+  const hasMeasuredRef = useRef(false);
+  const debounceTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -21,11 +31,29 @@ export function useResponsivePdfWidth(
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
-      if (entry) setWidth(entry.contentRect.width);
+      if (!entry) return;
+      const nextWidth = entry.contentRect.width;
+
+      if (!hasMeasuredRef.current) {
+        hasMeasuredRef.current = true;
+        setWidth(nextWidth);
+        return;
+      }
+
+      if (debounceTimeoutRef.current !== null) {
+        window.clearTimeout(debounceTimeoutRef.current);
+      }
+      debounceTimeoutRef.current = window.setTimeout(() => {
+        debounceTimeoutRef.current = null;
+        setWidth(nextWidth);
+      }, RESIZE_DEBOUNCE_MS);
     });
 
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (debounceTimeoutRef.current !== null) window.clearTimeout(debounceTimeoutRef.current);
+    };
   }, [containerRef]);
 
   return Math.min(width, maxWidth);
