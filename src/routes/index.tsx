@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({ component: Home });
  *    already been shown once this session.
  */
 function Home() {
-  const { bootMode, boot } = useBootSequence("initial");
+  const { bootMode, boot, awaitingFirstInteraction } = useBootSequence("initial");
   // Plays the XP startup chime every time the boot screen finishes and the
   // desktop appears — the initial load and every Start-button reboot alike.
   useStartupSound(bootMode);
@@ -107,6 +107,7 @@ function Home() {
       <XPBootScreen
         visible={bootMode !== null}
         label={bootMode === "initial" ? "Starting up…" : "Loading…"}
+        awaitingFirstInteraction={awaitingFirstInteraction}
       />
     </div>
   );

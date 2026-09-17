@@ -181,7 +181,9 @@ to change.
   hook, which owns the single `setTimeout` that clears `bootMode`. No
   duplicated, unexplained `setTimeout(..., 2000)` calls anywhere else.
 - **Three distinct exit paths**, as specified:
-  - Initial load → `XPBootScreen` for 2000ms → desktop (smooth opacity
+  - Initial load → `XPBootScreen`, waiting for the visitor's first
+    click/tap/keypress before its 2000ms countdown starts (see
+    "Startup sound" below for why) → desktop (smooth opacity
     cross-fade, not a reload).
   - Start button → `activeCase`/`currentSlide` reset immediately,
     `XPBootScreen` for 1000ms → desktop.
@@ -228,33 +230,41 @@ the initial load *and* every subsequent Start-button reboot alike, since
 both are the same transition. It does not play for opening/closing/
 switching cases, for slide navigation, or on any other render.
 
-- `useStartupSound(bootMode)` (`src/hooks/useStartupSound.ts`) watches
-  for any transition from a non-null `bootMode` to `null` — the same
-  state `useBootSequence` already owns — rather than "the desktop is
-  visible," so re-renders that don't represent an actual boot ending
-  can't trigger a replay. One `Audio` element is created once and
-  reused (rewound to the start each time) rather than a new one per
-  play.
-- No unmuted sound can autoplay before the visitor has interacted with
-  the page at all, in any modern browser — that's browser policy, not
-  something client-side code can override. So only the very first
-  attempt (right after the initial 2s boot, if the visitor hasn't
-  touched the page yet) is likely to be rejected; the hook catches
-  that and retries once, inside the visitor's next genuine interaction
-  (`pointerdown`, `pointerup`, `touchend`, `mousedown`, or `keydown` —
-  deliberately more than just `click`, since engines and input types
-  differ on which of these they treat as sufficient activation for
-  unlocking playback). Once the visitor has interacted with the page
-  at all — which clicking Start itself counts as — the browser's
-  autoplay policy stays unlocked for the rest of the session, so every
-  later reboot plays immediately with no fallback needed. A fresh
-  reboot also cancels any not-yet-retried fallback from a previous one,
-  so an old pending retry can't also fire (double-playing) off of the
-  new transition's own click.
-- Volume is fixed at `0.6`, `loop` is `false`, and every `play()` call
-  is wrapped so a browser that doesn't return a Promise from `play()`
-  (very old WebKit) can't throw an uncaught error — it's normalized
-  into a real Promise either way.
+No modern browser allows unmuted audio to autoplay before the visitor
+has interacted with the page at all — that's browser policy, not
+something client-side code can override. Rather than let that block the
+*first* play and fall back to a delayed retry (which meant a visible
+desktop with no sound until a second, unrelated click happened to land),
+the initial boot's own countdown is gated behind that first interaction:
+
+- `useBootSequence` (`src/hooks/useBootSequence.ts`) only starts the
+  "initial" boot's 2s timer once the visitor has clicked, tapped, or
+  pressed a key anywhere on the page (`pointerdown` / `keydown` /
+  `touchend`, once). Until then, `XPBootScreen` shows the boot screen
+  indefinitely with a "Click or Tap to START" prompt in place of the
+  progress bar's animation. The one gesture this asks for is what gets
+  the visitor into the site at all — not an extra click after the
+  desktop already showed up.
+- Because that gesture satisfies the browser's autoplay requirement
+  *before* `bootMode` ever transitions to `null` for the first time,
+  `useStartupSound(bootMode)` (`src/hooks/useStartupSound.ts`) — which
+  watches for any transition from a non-null `bootMode` to `null` —
+  can call `play()` right then and have it succeed immediately, with
+  certainty, every time. The Start-button reboot never needs the
+  gate at all: by the time it's reachable, the visitor has already
+  interacted with the page once (through this same gate), so the
+  browser's autoplay policy is already unlocked for the rest of the
+  session.
+- A blocked-play fallback (retrying on the visitor's next
+  `pointerdown` / `pointerup` / `touchend` / `mousedown` / `keydown`)
+  still exists in `useStartupSound` as a safety net for any edge case
+  the gate doesn't anticipate, but in normal use it never has to fire.
+- One `Audio` element is created once and reused (rewound to the start
+  each time) rather than a new one per play. Volume is fixed at `0.6`,
+  `loop` is `false`, and every `play()` call is wrapped so a browser
+  that doesn't return a Promise from `play()` (very old WebKit) can't
+  throw an uncaught error — it's normalized into a real Promise either
+  way.
 
 **Rights note:** "The Microsoft Sound" is Microsoft's copyrighted
 property. The audio file here was supplied by the project owner for

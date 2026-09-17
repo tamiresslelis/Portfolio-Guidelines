@@ -7,6 +7,12 @@ interface XPBootScreenProps {
   /** Status text announced to assistive tech only — the authentic boot
    *  screen has no visible status line, so this isn't rendered on screen. */
   label: string;
+  /** True only during the very first boot, before the visitor has clicked,
+   *  tapped, or pressed a key anywhere on the page. The countdown to the
+   *  desktop is paused until then (see useBootSequence.ts for why), so this
+   *  shows a "click to continue" cue instead of animating as if it were
+   *  already progressing. */
+  awaitingFirstInteraction: boolean;
 }
 
 /**
@@ -17,7 +23,7 @@ interface XPBootScreenProps {
  * presentational — how long it stays on screen is decided by
  * `useBootSequence` (see `src/config/timing.ts`), not by this component.
  */
-export function XPBootScreen({ visible, label }: XPBootScreenProps) {
+export function XPBootScreen({ visible, label, awaitingFirstInteraction }: XPBootScreenProps) {
   return (
     <div
       className={`fixed inset-0 z-100 flex flex-col items-center justify-center bg-black transition-opacity duration-400 ${
@@ -57,12 +63,30 @@ export function XPBootScreen({ visible, label }: XPBootScreenProps) {
           className="relative h-[9px] w-[130px] overflow-hidden rounded-[5px] border border-[#55606c] bg-[#0c0c0c] sm:w-[180px]"
           aria-hidden="true"
         >
-          <div className="absolute top-px bottom-px left-0 flex gap-0.5 animate-xp-slide motion-reduce:animate-none motion-reduce:left-5">
+          <div
+            className={`absolute top-px bottom-px left-0 flex gap-0.5 motion-reduce:animate-none motion-reduce:left-5 ${
+              awaitingFirstInteraction ? "left-0" : "animate-xp-slide"
+            }`}
+          >
             <span className="h-full w-[13px] rounded-[1px] bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
             <span className="h-full w-[13px] rounded-[1px] bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
             <span className="h-full w-[13px] rounded-[1px] bg-linear-to-b from-[#5aa0ea] to-[#0a4bb5]" />
           </div>
         </div>
+
+        {/* No browser allows audio to autoplay before the visitor has
+            interacted with the page at all — this is what makes the
+            startup chime (useStartupSound) able to play automatically the
+            instant the desktop appears, every time, instead of needing a
+            second click later. Not part of the authentic XP boot screen,
+            but there's no way to guarantee that without it. */}
+        <p
+          className={`m-0 text-xp-sm text-[#8fa8c9] transition-opacity duration-300 ${
+            awaitingFirstInteraction ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          Click or Tap to START
+        </p>
       </div>
 
       {/* Boot status ("Starting up…" vs "Loading…") is announced to

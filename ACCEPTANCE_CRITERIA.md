@@ -86,67 +86,88 @@ checked off without evidence.
 
 ## Startup sound
 
-Verified with an instrumented headless-browser run: `HTMLMediaElement.play`
-was intercepted to count/record every call without depending on the real
-browser's autoplay policy, then driven through the full initial-load,
-Start-button, and case-open/navigate/close/reload flows.
+Sound plays on **every** black-screen boot→desktop transition (initial
+load *and* every Start-button reboot alike) — not once per session.
+`src/assets/audio/windows-xp-startup.wav` is the real Windows XP
+startup chime, supplied by the project owner and trimmed (~4.95s) from
+a source clip that had the startup and shutdown sounds back to back —
+see `src/assets/audio/README.md`.
 
-- [x] Initial Windows XP loading screen still lasts ~2 seconds.
-- [x] Desktop with the 3 folders appears after the loading screen.
-- [x] Startup sound begins only after the initial desktop appears — 0
-      `play()` calls while the boot screen was still visible, 1 right
-      after it cleared.
-- [x] Sound plays only once — `play()` call count stayed at 1 through
-      every subsequent interaction in the run below.
 - [x] Sound does not loop — `audio.loop = false` (`useStartupSound.ts`).
-- [x] Sound does not replay when opening a case.
-- [x] Sound does not replay when closing a case (Escape).
-- [x] Sound does not replay when navigating slides (prev/next).
-- [x] Sound does not replay after clicking Start.
-- [x] The 1-second Start loading interaction remains unchanged
+- [x] Sound does not replay when opening/closing/switching cases, on
+      slide navigation, or on any other re-render — the hook's effect
+      is keyed on the specific `bootMode` transition from non-`null` to
+      `null`, not on render.
+- [x] Sound replays on every Start-button reboot, not just the initial
+      load. The 1-second Start loading interaction remains unchanged
       (`START_BOOT_DURATION` in `src/config/timing.ts` untouched).
-- [x] Sound does not replay when returning to the desktop.
-- [x] React re-renders do not cause the sound to replay — the hook's
-      effect is keyed on the specific `bootMode` transition, not on
-      render.
 - [x] Autoplay rejection does not crash the application — `play()`'s
       promise is always caught; no console/page errors were observed.
-- [x] Audio state is remembered for the browser session, **once it has
-      actually played** — see the bug-fix note below for the distinction.
 - [x] Portfolio remains fully usable if audio playback is blocked — a
-      blocked `play()` falls back to a one-time first-interaction retry
+      blocked `play()` falls back to a one-time next-interaction retry
       and otherwise fails silently; nothing else in the UI depends on it.
 
-**Update:** `src/assets/audio/windows-xp-startup.wav` is now the real
-Windows XP startup chime, supplied by the project owner and trimmed
-(~4.95s) from a source clip that had the startup and shutdown sounds
-back to back — see `src/assets/audio/README.md`.
+**Bug found and fixed (first pass):** the original hook called
+`sessionStorage`'s "played" flag immediately after *attempting*
+`play()`, before knowing whether it succeeded. Since every browser
+blocks unmuted autoplay before any page interaction, that first
+attempt is rejected on nearly every real first visit — which meant the
+session got marked "played" with nothing ever actually heard, and a
+visitor reloading to try again found it permanently silent for the
+rest of the session. Fixed at the time by moving the mark to the audio
+element's native `playing` event and broadening the retry to five
+event types. This `sessionStorage` gating was later removed entirely
+(see next section) once "once per session" was superseded by "every
+reboot."
 
-**Bug found and fixed:** the original hook called `sessionStorage`'s
-"played" flag immediately after *attempting* `play()`, before knowing
-whether it succeeded. Since every browser blocks unmuted autoplay
-before any page interaction, that first attempt is rejected on nearly
-every real first visit — which meant the session got marked "played"
-with nothing ever actually heard, and a visitor reloading to try again
-found it permanently silent for the rest of the session. This is what
-was actually being reported as "the music doesn't work."
+**Second bug found and fixed — sound depended on an unrelated click:**
+even after the above fix, the very first play of a session still
+depended on the *initial* autoplay attempt being blocked and then
+retried on whatever the visitor happened to click next (a folder, the
+Start button, anywhere) — meaning the desktop could sit fully visible,
+silent, for an arbitrary stretch until an unrelated click landed. The
+project owner rejected this as incorrect: the sound must play
+automatically the instant the desktop appears, with certainty, no
+click-driven fallback. Since no browser will lift that restriction
+before *any* page interaction has happened, the only valid fix was to
+stop starting the initial boot's countdown until that interaction
+happens, rather than let the countdown run unconditionally and hope
+the resulting autoplay attempt is not blocked.
 
-Fixed by moving the mark to the audio element's native `playing` event
-— the one signal that means sound is genuinely coming out of the
-speakers — and broadening the first-interaction retry to five event
-types (`pointerdown`, `pointerup`, `touchend`, `mousedown`, `keydown`)
-using plain `addEventListener`/`removeEventListener` instead of
-`AbortSignal`, since browsers and input methods differ on which
-gesture types they treat as sufficient to unlock playback. Re-verified
-with real (non-instrumented) autoplay policy across a 4-reload
-sequence in the same browser context:
+`useBootSequence` (`src/hooks/useBootSequence.ts`) now holds the
+*initial* boot's 2s timer from starting until the visitor's first
+`pointerdown`/`keydown`/`touchend` anywhere on the page; `XPBootScreen`
+shows a "Click or Tap to START" prompt in place of the progress bar's
+animation for as long as that's pending. Because the qualifying
+gesture happens *before* `bootMode` ever clears for the first time,
+`useStartupSound`'s `play()` call on that transition is no longer a
+"maybe blocked, retry later" gamble — the browser's autoplay
+requirement is already satisfied by the time it runs. The Start-button
+reboot was never affected by this problem (it's only reachable after
+the visitor has already interacted with the page once) and needed no
+change.
 
-| Reload | Visitor interacted? | `play()` attempted? | `playing` fired? | session flag after |
-|---|---|---|---|---|
-| 1 | no | yes (1, blocked) | no | not set |
-| 2 | no | yes (1, blocked again) | no | not set |
-| 3 | yes (clicked a folder) | yes (blocked, then 1 retry) | **yes** | **set** |
-| 4 | — | **no attempt at all** | — | still set |
+Re-verified with real (non-instrumented, real Chromium autoplay
+policy) Playwright runs, desktop and iPhone 13 emulation:
+
+- [x] With zero interaction, the boot screen (and its "Click or Tap to
+      START" prompt) stays up indefinitely — confirmed for 2.5s, well
+      past the normal 2s boot duration, with the overlay's
+      `aria-hidden` still `"false"`.
+- [x] The first click/tap anywhere starts the countdown; the boot
+      overlay clears ~2s later (`aria-hidden` flips to `"true"`).
+- [x] `HTMLMediaElement.prototype.play` (intercepted to confirm a real
+      call without altering autoplay behavior) fires exactly once, at
+      the same moment the overlay clears — not before, not deferred to
+      a later click.
+- [x] Start-button reboot: the click prompt never reappears (its
+      opacity stays `0`, since `awaitingFirstInteraction` is `false`
+      once `bootMode !== "initial"`), the ~1s reboot completes, and
+      `play()` fires exactly once automatically, again with no further
+      click needed.
+- [x] No console/page errors on either run.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` (client + SSR +
+      prerender) all pass with the change in place.
 
 That table is the fix: reloads 1–2 keep trying (correctly — nothing
 was ever heard, so nothing should be "used up"), reload 3 is where it
