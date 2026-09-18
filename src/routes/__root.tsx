@@ -14,12 +14,12 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      // favicon.svg lives in public/, so — unlike appCss above — it never
+      // favicon.png lives in public/, so — unlike appCss above — it never
       // passes through Vite's asset pipeline to get the configured base
       // path applied automatically. import.meta.env.BASE_URL adds it
       // manually, so this still resolves correctly under a subpath (e.g.
       // GitHub Pages' `/<repo-name>/`), not just at the domain root.
-      { rel: "icon", type: "image/svg+xml", href: `${import.meta.env.BASE_URL}favicon.svg` },
+      { rel: "icon", type: "image/png", href: `${import.meta.env.BASE_URL}favicon.png` },
     ],
   }),
   shellComponent: RootDocument,

@@ -564,3 +564,22 @@ for the architecture.
       race-condition check) was re-run against the actual production
       build (`npm run build` + `vite preview`), with zero console/page
       errors throughout.
+
+## Favicon
+
+Replaced the hand-drawn `favicon.svg` with the real Windows XP flag logo
+the project owner supplied (`public/favicon.png`).
+
+- [x] Source PNG (518×457, ~125KB) was padded to a square and downscaled
+      to 64×64 before committing (~6KB) — a favicon never displays
+      larger than a few dozen pixels, so shipping the full-resolution
+      source would be pure waste; padding to square first avoids a
+      stretched/squashed icon at that non-square source's proportions.
+- [x] `src/routes/__root.tsx`'s favicon `<link>` updated to
+      `type="image/png"` pointing at `favicon.png`, still resolved
+      through `import.meta.env.BASE_URL` exactly as `favicon.svg` was —
+      unchanged base-path handling.
+- [x] The now-unused `public/favicon.svg` was removed rather than left
+      behind as dead weight.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place.

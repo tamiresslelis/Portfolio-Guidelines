@@ -28,7 +28,7 @@ export interface CaseStudy {
 }
 
 // `public/` files are copied to the build output as-is and must be
-// referenced with the deployed base path prefix, same as favicon.svg in
+// referenced with the deployed base path prefix, same as favicon.png in
 // `routes/__root.tsx` — GitHub Pages serves this app from `/<repo-name>/`,
 // not the domain root (see vite.config.ts).
 const casePdfUrl = (fileName: string) => `${import.meta.env.BASE_URL}cases/${fileName}`;
