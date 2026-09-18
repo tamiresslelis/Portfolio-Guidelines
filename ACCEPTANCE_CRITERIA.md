@@ -583,3 +583,62 @@ the project owner supplied (`public/favicon.png`).
       behind as dead weight.
 - [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
       the change in place.
+
+## Taskbar system tray (Brazilian flag + Florianópolis clock)
+
+Replaced the plain "Product Design Portfolio" taskbar text with an
+authentic XP-style system tray, plus a "Since 2011" easter egg. See
+[README → Taskbar system tray](README.md#taskbar-system-tray).
+
+- [x] Clock uses `Intl.DateTimeFormat("pt-BR", { hour: "2-digit",
+      minute: "2-digit", hour12: false, timeZone: "America/Sao_Paulo" })`
+      — no hardcoded time. Verified live against an independently
+      computed expected value in the same timezone; matched exactly.
+- [x] Clock updates automatically while the page is open (15s poll —
+      a "HH:MM" display only changes once a minute, so a 1s interval
+      would just be extra re-renders for no visible benefit).
+- [x] 24-hour format, confirmed via the formatter options above and by
+      reading the rendered value.
+- [x] No hydration mismatch: `useClientClock` returns `null` until its
+      first effect runs post-mount (effects never run during the
+      server prerender), so server and first-client-render output
+      agree on the same placeholder. Verified zero console
+      errors/warnings — including no React hydration warning — across
+      a full page load in the production build.
+- [x] Tray styled distinctly from the main taskbar (lighter/cooler
+      blue via new `--color-xp-tray-start`/`-end` tokens), with an
+      inset border — not flat, not a modern pill, no large radius.
+- [x] Tooltip ("Florianópolis, Brazil · UTC−3") styled like a real XP
+      tooltip: pale yellow (`#ffffe1`), thin black border, square
+      corners, no shadow, appears instantly (no fade) after a 400ms
+      hover delay — verified visually via screenshot and behaviorally
+      (hidden before the delay, visible after).
+- [x] Tooltip also appears on keyboard focus (immediately, no delay —
+      a keyboard user shouldn't wait out a hover timer) and hides on
+      blur — verified via `.focus()`/Tab in a real browser.
+- [x] Touch: a tap reveals the tooltip and auto-hides it after ~2.5s,
+      rather than requiring hover (which touch devices don't have) or
+      leaving it stuck open — verified on a 375px mobile viewport.
+- [x] "Since 2011" is a separate, distinct taskbar item (not inside the
+      clock tooltip), styled identically to the existing active-case
+      -study label via a new shared `XpTaskbarItem` component (removed
+      the duplicated inline styling that existed for just that one
+      label). Hovering/focusing it reveals "2011 — my first computer"
+      via the same `XpTooltip` — the personal story lives in the
+      tooltip, not as visible copy.
+- [x] Both the clock and "Since 2011" are real `<button>` elements with
+      descriptive `aria-label`s (`Florianópolis time, 19:42 (UTC−3)`;
+      `Since 2011 — 2011 — my first computer`), independent of the
+      tooltip bubble itself (which is `aria-hidden`, decorative only).
+- [x] Responsive down to 375px: Start, "Since 2011", and the tray never
+      overlap — verified by measuring each element's bounding box and
+      confirming a gap between all three at a 375px viewport. Built
+      with ordinary flexbox sizing, not `transform: scale`.
+- [x] Visual hierarchy preserved: no new element is larger, brighter,
+      or more prominent than the existing Start button or open-case
+      label — the clock/flag/"Since 2011" read as small, incidental
+      taskbar details, consistent with the rest of the chrome.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place; verified against the actual production
+      build (`npm run build` + `vite preview`), with zero console/page
+      errors across desktop hover/focus and mobile tap interactions.

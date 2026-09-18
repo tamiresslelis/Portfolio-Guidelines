@@ -115,6 +115,10 @@ src/
     DesktopFolder.tsx        # one desktop icon
     Taskbar.tsx              # the taskbar shell
     StartButton.tsx          # the green Start button
+    XpTaskbarItem.tsx        # a small "pressed-in" taskbar button (case title, "Since 2011")
+    XpTooltip.tsx            # hover/focus/tap XP-styled tooltip (pale yellow, square corners)
+    XpSystemTray.tsx         # bottom-right notification area: flag + Florianópolis clock
+    XpClock.tsx              # presentational flag + "HH:MM" readout
     CaseWindow.tsx           # XP window chrome hosting a case study's PDF viewer
     ResizeHandles.tsx        # the 8 invisible edge/corner drag zones for CaseWindow
     case-study/
@@ -147,6 +151,7 @@ src/
     usePdfPagePrefetch.ts     # warms PDF.js's per-page cache for the neighbors of the current page
     usePdfPageBuffer.ts       # two-slot double buffer behind the page-transition loading overlay
     useResizableWindow.ts     # pointer-driven edge/corner resizing for CaseWindow
+    useClientClock.ts         # the live Florianópolis "HH:MM" behind XpSystemTray
 
   routes/
     __root.tsx               # HTML shell, <head> tags, global stylesheet link
@@ -417,6 +422,53 @@ blanking to white.
 - **Accessibility:** the overlay's message is in a `role="status"
   aria-live="polite"` element, and the Next/Prev buttons keep their
   existing `aria-label`s regardless of their disabled state.
+
+## Taskbar system tray
+
+The taskbar's bottom-right corner (previously a plain "Product Design
+Portfolio" label) is now an authentic-looking Windows XP notification
+area: a Brazilian flag and the current time in Florianópolis, with two
+quiet, explorable details rather than explanatory copy — a personal
+touch, not decoration competing with the case studies.
+
+- **`src/components/XpSystemTray.tsx`** renders the tray itself: a
+  shade lighter/cooler than the main taskbar (`--color-xp-tray-start`/
+  `-end` in `src/styles.css`), with an inset border matching real XP
+  chrome. It owns the live clock value (`useClientClock`) and builds
+  the accessible name (`aria-label="Florianópolis time, 19:42 (UTC−3)"`)
+  from it — `XpClock` itself is purely presentational.
+- **`src/hooks/useClientClock.ts`** formats the time via
+  `Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit",
+  hour12: false, timeZone: "America/Sao_Paulo" })`, refreshed every 15s
+  (a "HH:MM" display only changes once a minute — no need to re-render
+  every second). **Hydration-safe by construction:** it returns `null`
+  until its first `useEffect` runs, which never happens during the
+  server prerender — so the server's output and the client's very
+  first render both show the same `null`-driven placeholder (`XpClock`
+  renders `--:--` for it), and the real time is only ever set
+  client-side, after hydration. There is nothing to reconcile, so
+  there's no mismatch to warn about.
+- **`src/components/XpTooltip.tsx`** is a small reusable hover/focus/
+  tap tooltip styled after real XP tooltips (pale yellow `#ffffe1`,
+  thin black border, square corners, no shadow, no fade — it just
+  appears) shared by the tray and the "Since 2011" item below. Hover
+  shows it after a short 400ms delay (like a native OS tooltip, not an
+  instant modern hover-card); keyboard focus shows it immediately
+  (no reason to make a keyboard user wait); a tap on touch devices
+  reveals it for ~2.5s and auto-dismisses. It's purely presentational —
+  the actual accessible name lives in an `aria-label` on each trigger
+  button, not in the tooltip bubble (which is `aria-hidden`).
+- **"Since 2011"** (`src/components/XpTaskbarItem.tsx`, reused for both
+  this and the existing active-case-study label — previously
+  duplicated inline styling) is a small taskbar button placed right
+  after Start. It carries no explanation on its face; hovering or
+  focusing it reveals "2011 — my first computer" via the same
+  `XpTooltip` — the year computers/tech entered the story, told as an
+  easter egg rather than stated outright.
+- **Responsive:** the tray and "Since 2011" use ordinary flexbox
+  sizing (no `transform: scale`), so Start, "Since 2011", and the tray
+  never overlap at any width — verified with zero overlap down to a
+  375px viewport, with the flag+time and Start always fully visible.
 
 ## Startup sound
 
