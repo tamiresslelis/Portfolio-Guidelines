@@ -10,7 +10,7 @@ export const Route = createRootRoute({
         name: "description",
         content: "Tamires Lelis — Product Design portfolio, presented as a Windows XP desktop.",
       },
-      { title: "Tamires Lelis — Portfolio" },
+      { title: "Tamires Lelis — Senior Product Designer" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
