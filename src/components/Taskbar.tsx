@@ -1,10 +1,15 @@
 import { StartButton } from "./StartButton";
+import { XpTaskbarItem } from "./XpTaskbarItem";
+import { XpTooltip } from "./XpTooltip";
+import { XpSystemTray } from "./XpSystemTray";
 
 interface TaskbarProps {
   onStartClick: () => void;
   /** Title of the currently open case window, if any, shown as a taskbar button. */
   activeCaseTitle: string | null;
 }
+
+const SINCE_2011_TOOLTIP = "2011 — my first computer";
 
 /** The Windows XP-style taskbar, fixed to the bottom of the viewport. */
 export function Taskbar({ onStartClick, activeCaseTitle }: TaskbarProps) {
@@ -16,20 +21,20 @@ export function Taskbar({ onStartClick, activeCaseTitle }: TaskbarProps) {
 
       <div className="mx-0 my-1.5 w-px self-stretch bg-black/35 shadow-[1px_0_0_rgba(255,255,255,0.25)]" aria-hidden="true" />
 
+      {/* A quiet, explorable detail rather than portfolio copy: the
+          tooltip carries the actual story, the button just says "Since
+          2011" — the year computers/tech entered the picture. */}
+      <XpTooltip label={SINCE_2011_TOOLTIP} align="left">
+        <XpTaskbarItem as="button" ariaLabel={`Since 2011 — ${SINCE_2011_TOOLTIP}`}>
+          Since 2011
+        </XpTaskbarItem>
+      </XpTooltip>
+
       <div className="flex min-w-0 flex-1 items-center">
-        {activeCaseTitle && (
-          <span
-            className="inline-block max-w-[220px] overflow-hidden rounded-[3px] border border-[#0b2f75] bg-linear-to-b from-[#1c4fb0] to-[#123b8c] px-3 py-1 text-xp-sm text-white text-ellipsis whitespace-nowrap shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] max-[480px]:max-w-[120px]"
-            title={activeCaseTitle}
-          >
-            {activeCaseTitle}
-          </span>
-        )}
+        {activeCaseTitle && <XpTaskbarItem title={activeCaseTitle}>{activeCaseTitle}</XpTaskbarItem>}
       </div>
 
-      <span className="flex-shrink-0 pr-2 text-right text-xp-sm text-white/90 select-none">
-        Product Design Portfolio
-      </span>
+      <XpSystemTray />
     </div>
   );
 }

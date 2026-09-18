@@ -37,6 +37,11 @@
   --color-xp-taskbar-border-top: #6fb3f7;
   --color-xp-taskbar-border-bottom: #0b3a9c;
 
+  /* System tray — a shade lighter/cooler than the taskbar itself, matching
+     the subtly distinct notification-area background real XP used. */
+  --color-xp-tray-start: #4fa9e8;
+  --color-xp-tray-end: #2d7ec9;
+
   /* Start button */
   --color-xp-start-start: #7ed456;
   --color-xp-start-mid: #4bab24;
