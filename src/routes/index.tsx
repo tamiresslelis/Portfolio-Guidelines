@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import { cases, getCaseById } from "../data/cases";
 import { useBootSequence } from "../hooks/useBootSequence";
 import { useStartupSound } from "../hooks/useStartupSound";
 import { XPBootScreen } from "../components/XPBootScreen";
 import { Desktop } from "../components/Desktop";
+import { EvolutionTransition } from "../components/EvolutionTransition";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/")({ component: Home });
  *    already been shown once this session.
  */
 function Home() {
+  const navigate = useNavigate();
   const { bootMode, boot, awaitingFirstInteraction } = useBootSequence("initial");
   // Plays the XP startup chime every time the boot screen finishes and the
   // desktop appears — the initial load and every Start-button reboot alike.
@@ -33,6 +35,7 @@ function Home() {
   const [isResumeOpen, setIsResumeOpen] = useState(false);
   const [isResumeUnlocked, setIsResumeUnlocked] = useState(false);
   const [hasSeenNavigationTooltip, setHasSeenNavigationTooltip] = useState(false);
+  const [isEvolvingToFuture, setIsEvolvingToFuture] = useState(false);
 
   const activeCase = getCaseById(activeCaseId) ?? null;
   const totalSlides = activeCase?.slides.length ?? 0;
@@ -66,14 +69,33 @@ function Home() {
     setIsResumeUnlocked(true);
   }, []);
 
-  // Start button: always shows the (short) boot screen, whether pressed
-  // from the desktop, from inside an open case, or from the resume.
-  const handleStartClick = useCallback(() => {
+  // Start Menu → "Restart Desktop": always shows the (short) boot screen,
+  // whether pressed from the desktop, from inside an open case, or from
+  // the resume. The taskbar's own former direct behavior, now reachable
+  // as a menu item instead of the Start button's click action.
+  const handleRestartDesktop = useCallback(() => {
     setActiveCaseId(null);
     setCurrentSlide(0);
     setIsResumeOpen(false);
     boot("start");
   }, [boot]);
+
+  // Start Menu → "View portfolio in the future": kicks off the lazy
+  // future-experience chunk's download immediately (the browser caches
+  // the module, so by the time EvolutionTransition's animation finishes,
+  // `/future`'s own `React.lazy()` import of the same module very likely
+  // resolves instantly instead of the visitor watching a second loading
+  // state right after the first) and starts the transition; navigation
+  // itself happens in `handleEvolutionComplete`, once the transition
+  // reaches its own "arrival" visual state.
+  const handleViewFuture = useCallback(() => {
+    void import("../future/FuturePortfolio");
+    setIsEvolvingToFuture(true);
+  }, []);
+
+  const handleEvolutionComplete = useCallback(() => {
+    void navigate({ to: "/future" });
+  }, [navigate]);
 
   const handlePrevSlide = useCallback(() => {
     setCurrentSlide((slide) => Math.max(slide - 1, 0));
@@ -105,7 +127,8 @@ function Home() {
         onPrevSlide={handlePrevSlide}
         onNextSlide={handleNextSlide}
         onGoToSlide={handleGoToSlide}
-        onStartClick={handleStartClick}
+        onRestartDesktop={handleRestartDesktop}
+        onViewFuture={handleViewFuture}
         showNavigationTooltip={activeCase !== null && !hasSeenNavigationTooltip}
         onDismissNavigationTooltip={handleDismissNavigationTooltip}
         isResumeOpen={isResumeOpen}
@@ -119,6 +142,7 @@ function Home() {
         label={bootMode === "initial" ? "Starting up…" : "Loading…"}
         awaitingFirstInteraction={awaitingFirstInteraction}
       />
+      <EvolutionTransition active={isEvolvingToFuture} onComplete={handleEvolutionComplete} />
     </div>
   );
 }

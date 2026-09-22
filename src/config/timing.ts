@@ -24,3 +24,11 @@ export const BOOT_DURATIONS: Record<Exclude<BootMode, null>, number> = {
   initial: INITIAL_BOOT_DURATION,
   start: START_BOOT_DURATION,
 };
+
+/**
+ * How long the 2011 → future evolution transition plays (see
+ * `EvolutionTransition.tsx`) before navigating to `/future`. Kept here
+ * alongside the boot durations since it's the same kind of concern: one
+ * named constant instead of a `setTimeout` magic number.
+ */
+export const EVOLUTION_TRANSITION_DURATION = 2000;

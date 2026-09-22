@@ -65,6 +65,16 @@
   --animate-xp-slide: xp-slide 1.1s linear infinite;
   --animate-xp-fade-in: xp-fade-in 250ms ease;
   --animate-xp-pulse: xp-pulse 1.5s ease-in-out infinite;
+
+  /* The 2011 → future evolution transition (EvolutionTransition.tsx) — see
+     the timings/durations documented on each layer in that component; the
+     keyframes themselves stay purely visual/reusable here. */
+  --animate-evolution-scanline: evolution-scanline 900ms ease-in forwards;
+  --animate-evolution-glitch: evolution-glitch 500ms steps(2, jump-none) 2;
+  --animate-evolution-dissolve: evolution-dissolve 1000ms ease-in forwards;
+  --animate-evolution-bloom: evolution-bloom 1400ms ease-out forwards;
+  --animate-evolution-mote: evolution-mote 3.5s ease-in-out infinite;
+  --animate-evolution-text: evolution-text-in 900ms ease-out forwards;
 }
 
 @keyframes xp-wave {
@@ -104,6 +114,92 @@
   }
   50% {
     opacity: 0.4;
+  }
+}
+
+/* --- Evolution transition (2011 → future) --- */
+
+/* A single bright scanline sweeping top-to-bottom once, like a CRT losing
+   sync — the "fracture" beat. */
+@keyframes evolution-scanline {
+  from {
+    transform: translateY(-100%);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+/* A brief 1-2px horizontal jitter, paired with the scanline. */
+@keyframes evolution-glitch {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  50% {
+    transform: translateX(1px);
+  }
+  75% {
+    transform: translateX(-1px);
+  }
+}
+
+/* The "blinds shattering into slivers" beat: a striped pattern fading in
+   while sliding sideways, reading as dissolving rather than a flat wipe.
+   The next (bloom) layer paints over it afterward — this doesn't need to
+   animate back out on its own. */
+@keyframes evolution-dissolve {
+  from {
+    opacity: 0;
+    background-position: 0% 0%;
+  }
+  to {
+    opacity: 1;
+    background-position: 200% 0%;
+  }
+}
+
+/* The "arrival" beat: a soft radial glow blooming from a low horizon. */
+@keyframes evolution-bloom {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* A handful of slow-drifting motes (fireflies/spores) during the bloom —
+   each instance gets its own horizontal position/delay via inline style. */
+@keyframes evolution-mote {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-140px);
+    opacity: 0;
+  }
+}
+
+@keyframes evolution-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

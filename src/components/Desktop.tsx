@@ -25,7 +25,8 @@ interface DesktopProps {
   onPrevSlide: () => void;
   onNextSlide: () => void;
   onGoToSlide: (index: number) => void;
-  onStartClick: () => void;
+  onRestartDesktop: () => void;
+  onViewFuture: () => void;
   showNavigationTooltip: boolean;
   onDismissNavigationTooltip: () => void;
   isResumeOpen: boolean;
@@ -49,7 +50,8 @@ export function Desktop({
   onPrevSlide,
   onNextSlide,
   onGoToSlide,
-  onStartClick,
+  onRestartDesktop,
+  onViewFuture,
   showNavigationTooltip,
   onDismissNavigationTooltip,
   isResumeOpen,
@@ -108,7 +110,7 @@ export function Desktop({
           <ResumePasswordDialog onClose={onCloseResume} onUnlock={onUnlockResume} />
         ))}
 
-      <Taskbar onStartClick={onStartClick} activeCaseTitle={activeWindowTitle} />
+      <Taskbar onRestartDesktop={onRestartDesktop} onViewFuture={onViewFuture} activeCaseTitle={activeWindowTitle} />
     </div>
   );
 }
