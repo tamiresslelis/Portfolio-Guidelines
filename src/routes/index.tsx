@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cases, getCaseById } from "../data/cases";
 import { useBootSequence } from "../hooks/useBootSequence";
 import { useStartupSound } from "../hooks/useStartupSound";
@@ -7,7 +7,16 @@ import { XPBootScreen } from "../components/XPBootScreen";
 import { Desktop } from "../components/Desktop";
 import { EvolutionTransition } from "../components/EvolutionTransition";
 
-export const Route = createFileRoute("/")({ component: Home });
+export const Route = createFileRoute("/")({
+  // Lets the /future experience hand off to this side's real case-study
+  // viewer via a plain URL (?case=<id>) instead of re-implementing case
+  // -study reading inside the 3D route — see the effect below, which
+  // consumes and then clears this param.
+  validateSearch: (search: Record<string, unknown>): { case?: string } => ({
+    case: typeof search.case === "string" ? search.case : undefined,
+  }),
+  component: Home,
+});
 
 /**
  * The whole experience's top-level state. Everything the app needs to
@@ -26,6 +35,7 @@ export const Route = createFileRoute("/")({ component: Home });
  */
 function Home() {
   const navigate = useNavigate();
+  const { case: caseIdFromSearch } = Route.useSearch();
   const { bootMode, boot, awaitingFirstInteraction } = useBootSequence("initial");
   // Plays the XP startup chime every time the boot screen finishes and the
   // desktop appears — the initial load and every Start-button reboot alike.
@@ -45,6 +55,19 @@ function Home() {
     setActiveCaseId(id);
     setCurrentSlide(0);
   }, []);
+
+  // "Open full case study" from the /future experience arrives here as
+  // ?case=<id> — open it exactly like clicking its desktop folder would,
+  // then clear the param (replace, no new history entry) so it doesn't
+  // linger and re-trigger if the visitor navigates here again later.
+  useEffect(() => {
+    if (!caseIdFromSearch) return;
+    if (getCaseById(caseIdFromSearch)) {
+      handleOpenCase(caseIdFromSearch);
+    }
+    void navigate({ to: "/", search: {}, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseIdFromSearch]);
 
   // Red X / Escape: return to the desktop immediately, no boot screen.
   const handleCloseCase = useCallback(() => {

@@ -5,6 +5,7 @@ import { StartMenuItem } from "./StartMenuItem";
 import { XpTaskbarItem } from "./XpTaskbarItem";
 import { XpTooltip } from "./XpTooltip";
 import { XpSystemTray } from "./XpSystemTray";
+import { TimeMachineControl } from "./TimeMachineControl";
 
 interface TaskbarProps {
   /** Restarts the 2011 desktop's own boot sequence — the taskbar's
@@ -117,6 +118,8 @@ export function Taskbar({ onRestartDesktop, onViewFuture, activeCaseTitle }: Tas
       <div className="flex min-w-0 flex-1 items-center">
         {activeCaseTitle && <XpTaskbarItem title={activeCaseTitle}>{activeCaseTitle}</XpTaskbarItem>}
       </div>
+
+      <TimeMachineControl onActivate={onViewFuture} />
 
       <XpSystemTray />
     </div>

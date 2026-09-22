@@ -31,9 +31,20 @@ function FutureRoute() {
     void navigate({ to: "/" });
   }, [navigate]);
 
+  // Hands off to the real case-study viewer already built for the 2011
+  // side, rather than re-implementing case-study reading inside this
+  // route — routes/index.tsx reads this same `case` search param and
+  // opens the matching CaseWindow.
+  const handleOpenCaseStudy = useCallback(
+    (caseStudyId: string) => {
+      void navigate({ to: "/", search: { case: caseStudyId } });
+    },
+    [navigate],
+  );
+
   return (
     <Suspense fallback={<FutureChunkLoadingScreen />}>
-      <FuturePortfolio onExit={handleExit} />
+      <FuturePortfolio onExit={handleExit} onOpenCaseStudy={handleOpenCaseStudy} />
     </Suspense>
   );
 }
