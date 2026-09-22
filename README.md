@@ -121,6 +121,10 @@ src/
     XpClock.tsx              # presentational flag + "HH:MM" readout
     CaseWindow.tsx           # XP window chrome hosting a case study's PDF viewer
     ResizeHandles.tsx        # the 8 invisible edge/corner drag zones for CaseWindow
+    StartMenu.tsx            # the Start Menu panel (open/close, focus, keyboard nav)
+    StartMenuItem.tsx        # one menu row ("View portfolio in the future", "Restart Desktop")
+    EvolutionTransition.tsx  # the CSS-only 2011 → future transition
+    FutureChunkLoadingScreen.tsx  # lightweight fallback while future/'s JS chunk downloads
     case-study/
       CaseStudyViewer.tsx    # composition root: sizing, prefetch, page-buffer, current-page state
       PdfDocument.tsx        # <Document> wrapper: worker config, loading/error, retry
@@ -155,7 +159,33 @@ src/
 
   routes/
     __root.tsx               # HTML shell, <head> tags, global stylesheet link
-    index.tsx                # the page: owns all app state, renders Desktop + XPBootScreen
+    index.tsx                # "/" — the 2011 experience: owns all its state, renders Desktop + XPBootScreen
+    future.tsx                # "/future" — lazy-loads FuturePortfolio behind a Suspense boundary
+
+  future/                     # the 2026 experience — see "Start Menu & the future experience" below.
+                               # Deliberately isolated: nothing outside this folder imports from it
+                               # except routes/future.tsx's one lazy import, and nothing in here
+                               # imports the 2011 shell.
+    FuturePortfolio.tsx        # composition root: WebGL check, error boundary, Canvas, HUD
+    FutureErrorBoundary.tsx    # catches WebGL/render failures → FutureErrorFallback
+    constants.ts                # movement/camera/DPR tuning, centralized
+    scene/
+      FutureScene.tsx           # composes Environment + Lighting + Player + CameraController
+      SceneEnvironment.tsx      # ground, sky/fog color, a few abstract "ruin" primitives
+      Lighting.tsx               # one warm directional + one cool hemisphere light
+      Player.tsx                  # placeholder capsule; movement computed in useFrame via refs
+      CameraController.tsx        # damped third-person follow camera
+    ui/
+      FutureHud.tsx               # title + Exit button + controls hint (DOM, not in-canvas)
+      FutureLoadingScreen.tsx     # useProgress-driven overlay for real asset loads (Phase 4/5)
+      FutureErrorFallback.tsx     # WebGL-unsupported / render-failure fallback UI
+    hooks/
+      usePlayerMovement.ts        # WASD/arrow input tracked in a ref, not React state
+      useWebglSupport.ts           # hydration-safe WebGL capability check
+    data/
+      career.ts                    # empty for now — see the section below for why
+    types/
+      career.ts                    # the CareerMilestone shape
 
   router.tsx                  # TanStack Router instance
   routeTree.gen.ts             # generated — do not hand-edit
@@ -469,6 +499,117 @@ touch, not decoration competing with the case studies.
   sizing (no `transform: scale`), so Start, "Since 2011", and the tray
   never overlap at any width — verified with zero overlap down to a
   375px viewport, with the flag+time and Start always fully visible.
+
+## Start Menu & the future experience
+
+Clicking Start now opens an actual Start Menu instead of immediately
+rebooting the desktop — the reboot is still there, just moved to a
+"Restart Desktop" item, alongside the real point of this feature:
+**"View portfolio in the future"**, which travels from the 2011 XP
+desktop into `/future`, a separate, lazy-loaded React Three Fiber
+experience representing 2026.
+
+**This is intentionally an early, honest slice, not a finished 3D
+portfolio.** What's built: the full navigation loop (menu → transition
+→ lazy-loaded world → exit), a damped third-person camera, WASD/arrow
+-key movement, and the accessibility/performance/fallback scaffolding
+everything else will build on. What's *not* built yet, on purpose:
+real environment art, company/project milestones, audio, mobile touch
+controls, and the accessible HTML career-timeline alternative — adding
+those before the underlying architecture was validated would have
+risked building real content on foundations that might need to change.
+See "What's next" below for the concrete plan.
+
+### Start Menu
+
+- **`src/components/StartMenu.tsx`** / **`StartMenuItem.tsx`**: a real
+  `role="menu"`/`role="menuitem"` implementation — arrow-key (with
+  Home/End) navigation between items, auto-focus on the first item when
+  it opens, Escape closes and returns focus to the Start button, and a
+  `pointerdown` listener closes it on any click/tap outside (registered
+  in a `useEffect`, so it can never catch the very click that opened
+  the menu — that click has already finished dispatching by the time
+  the effect runs). `StartButton.tsx` carries `aria-haspopup="menu"`
+  and `aria-expanded`.
+- Items are passed as children rather than driven by a data array —
+  there are two of them today, and a config-driven list isn't earned
+  yet. `StartMenuItem` supports a `"primary"`/`"secondary"` visual
+  weight (matching a real Start Menu's pinned-app vs. system-action
+  split) rather than treating every entry identically.
+
+### The 2011 → future transition
+
+**`src/components/EvolutionTransition.tsx`** is deliberately CSS/DOM
+-only (no Three.js) so it can start playing *instantly* on click,
+while `/future`'s own JS chunk downloads in the background — the same
+`import(...)` the route will use is also fired the moment the menu
+item is selected, so the browser's module cache usually has it ready
+before the transition even finishes. Three beats (see the keyframes in
+`styles.css`): a scanline sweep + brief glitch jitter over the visible
+desktop, a striped "dissolve" fading in, then a soft warm bloom with
+drifting motes and "Entering the future" text. Under
+`prefers-reduced-motion`, all three beats are skipped and it resolves
+in ~400ms instead of the full ~2s. The transition ends in a dark,
+soft-glow visual that `FutureChunkLoadingScreen.tsx` — the *next*
+thing the visitor sees, on the new route, while the chunk potentially
+finishes downloading — intentionally matches, so the handoff across
+the route change reads as one continuous moment rather than two
+different loading screens.
+
+### `/future` — the React Three Fiber experience
+
+- **Isolation:** `src/future/` is a self-contained module. The only
+  coupling point is `routes/future.tsx`'s single `lazy(() =>
+  import("../future/FuturePortfolio"))` — nothing under `src/future/`
+  imports the 2011 shell, and nothing outside it imports Three.js.
+  Verified in the production build: `FuturePortfolio-*.js` (~900KB) is
+  its own chunk, never referenced from `/`'s `<head>` or its
+  `index-*.js`/`routes-*.js` bundles.
+- **SSR-safe by the same proven pattern as the PDF viewer:**
+  `useWebglSupport()` returns `null` until a post-mount effect runs
+  (never, during the server prerender), and `<Canvas>` only renders
+  when that value is `true` — so the server-rendered `/future` page
+  (yes, it *is* prerendered, since it's a real crawlable route) never
+  attempts to create a WebGL context, and the client's first render
+  matches the server's exactly (no hydration mismatch).
+- **State:** player position/rotation and the camera's target are
+  mutated directly on their Three.js objects inside `useFrame` via a
+  single shared `useRef` created once in `FutureScene.tsx` — never
+  through `setState`, so walking never triggers a React re-render. The
+  camera uses exponential ("1 − e^(−k·dt)") damping rather than a fixed
+  lerp factor, so it eases at a consistent *speed* regardless of frame
+  rate. No external state library — see the architecture notes on when
+  one (zustand, in the R3F ecosystem) would actually earn its place
+  (once more systems need to react to the same high-frequency value;
+  not yet, at this scale).
+- **Performance:** one shadow-casting directional light + one
+  non-shadow hemisphere fill (no more real-time lights than that); no
+  physics engine (a plain distance/boundary clamp is enough for a
+  walking path, not a physics playground); renderer DPR capped at 2,
+  mirroring `PdfPage.tsx`'s exact reasoning for the PDF viewer's own
+  DPR cap.
+- **Error handling:** `FutureErrorBoundary.tsx` (a class component —
+  React has no hook-based equivalent) catches render failures, and
+  `useWebglSupport()` returning `false` skips mounting `<Canvas>`
+  entirely rather than letting it throw. Both paths show
+  `FutureErrorFallback.tsx` — a short explanation and a button straight
+  back to `/` — verified with WebGL forcibly disabled in a real
+  browser: no black canvas, no stuck loading state, no console errors.
+- **Exit:** always available two ways — the HUD's "Exit to 2011"
+  button, or `Escape` — both call the same `onExit` callback the route
+  passes in, which just navigates back to `/`.
+
+### What's next
+
+Deliberately deferred, in roughly this order: a data-driven
+`CareerMilestone[]` built from the *existing* `src/data/resume.ts`
+(not a duplicated dataset — see the type's own doc comment in
+`src/future/types/career.ts`), real company/project stations along the
+path, the accessible HTML career-timeline alternative (sharing that
+same data, not re-authored separately), real environment art in place
+of the primitive placeholders, mobile touch controls, and audio.
+Each is a separable slice on top of the navigation/rendering
+foundation validated here, not a rewrite of it.
 
 ## Startup sound
 

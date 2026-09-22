@@ -642,3 +642,108 @@ authentic XP-style system tray, plus a "Since 2011" easter egg. See
       the change in place; verified against the actual production
       build (`npm run build` + `vite preview`), with zero console/page
       errors across desktop hover/focus and mobile tap interactions.
+
+## Start Menu + the /future React Three Fiber experience
+
+First slice of the 2011 → 2026 concept: an authentic Start Menu, a
+CSS-only time-travel transition, and a real, isolated, lazy-loaded
+Three.js world reachable and exitable end to end. Explicitly scoped as
+architecture-first, not the finished 3D portfolio — see
+[README → Start Menu & the future experience](README.md#start-menu--the-future-experience)
+for what's deliberately deferred and why.
+
+- [x] Clicking Start opens a real Start Menu (`role="menu"`) instead of
+      immediately rebooting; the previous reboot behavior is preserved
+      as a "Restart Desktop" item rather than silently removed —
+      verified it still plays the boot screen.
+- [x] Keyboard: auto-focus on the first item on open; ArrowUp/ArrowDown
+      cycle with wraparound; Home/End jump to the first/last item;
+      Escape closes and returns focus to the Start button — all
+      verified via real `.focus()`/key-press assertions, not just
+      visual inspection.
+- [x] Click-outside (and tap-outside, on a real mobile viewport) closes
+      the menu; verified the outside-click listener is registered in
+      an effect (so it can't fire on the very click that opened the
+      menu) rather than needing a same-tick workaround.
+- [x] `aria-haspopup="menu"` and `aria-expanded` on the Start button,
+      confirmed toggling correctly with the menu's open state.
+- [x] The 2011 → future transition is pure CSS/DOM — verified no
+      Three.js code runs until after it completes and navigation to
+      `/future` occurs.
+- [x] The future experience's JS chunk begins downloading the instant
+      "View portfolio in the future" is clicked (a raw `import()`
+      fired alongside the transition start), not after the ~2s
+      transition finishes — verified this import is issued from
+      `routes/index.tsx` before `EvolutionTransition` even starts its
+      timer.
+- [x] `prefers-reduced-motion: reduce` verified end to end in a real
+      browser context (Playwright's `reducedMotion: "reduce"`): the
+      transition resolves in ~400ms instead of ~2000ms, skipping all
+      three animated beats.
+- [x] `/future` is a real route (`createFileRoute("/future")`, its own
+      `head` title/description) — confirmed present in the production
+      build's prerender output (`[prerender] Prerendered 2 pages: / ,
+      /future`), not just a client-side state flag.
+- [x] **SSR safety, the same proven pattern as the PDF viewer:**
+      `useWebglSupport()` returns `null` during the server prerender
+      (effects never run there), so `<Canvas>` never mounts server
+      -side and the client's first render matches exactly — verified
+      zero hydration warnings/console errors across the entire
+      Start-Menu-to-3D-world-to-exit flow in the production build.
+- [x] **Bundle isolation:** confirmed in the actual build output that
+      `/`'s `<head>` (`modulepreload` links) references only
+      `index-*.js`/`routes-*.js` — no reference to the ~900KB
+      `FuturePortfolio-*.js` chunk anywhere on the 2011 page.
+- [x] Movement (WASD/arrow keys) verified functionally, not just by
+      reading the code: captured canvas pixels before/after holding a
+      movement key and confirmed they changed, on the actual rendered
+      output of the production build.
+- [x] Movement/camera state is ref-based, not `setState`-per-frame —
+      confirmed by code inspection: `Player`/`CameraController` mutate
+      Three.js objects directly inside `useFrame`; no React state
+      updates on the movement/camera hot path.
+- [x] Camera damping is frame-rate-independent (exponential damping,
+      not a fixed per-frame lerp factor) — a deliberate choice recorded
+      in `CameraController.tsx`'s own comment, not just an accident of
+      the first implementation that worked.
+- [x] A real, empirically-found visual bug was caught and fixed during
+      verification: the scene's background color didn't match its fog
+      color, producing a visible seam at the horizon (fog only tints
+      geometry, never the otherwise-empty background) — fixed by
+      matching them, confirmed via before/after screenshots.
+- [x] Exit works two ways (HUD button, `Escape`) and was verified to
+      actually return to `/` and leave the 2011 desktop fully
+      functional afterward (case folders still open normally) — not
+      just that the URL changed.
+- [x] WebGL-unsupported fallback verified with a real forced failure
+      (`HTMLCanvasElement.prototype.getContext` overridden to return
+      `null` for every context type): the fallback UI shows, its own
+      "Back to the portfolio" button works, and there is no black
+      canvas, no stuck loading state, and no console error — matching
+      the explicit "never leave the recruiter facing a broken
+      portfolio" requirement.
+- [x] Mobile verified on a real touch-emulated device profile (tap
+      instead of click) for the full loop: menu opens on tap, "View
+      portfolio in the future" navigates and renders a mounted canvas,
+      Exit is reachable and works. Touch *movement* controls are not
+      implemented yet (explicitly deferred, see README) — this only
+      confirms entry/exit isn't broken on touch, not full exploration.
+- [x] No physics engine added — a plain distance/boundary clamp
+      (`WORLD_BOUNDS` in `constants.ts`) is the entire "collision"
+      system, a deliberate choice given the stated scope (a walking
+      path, not a physics playground).
+- [x] Data model (`CareerMilestone`) is typed and ready but its actual
+      data array is intentionally empty, with a comment explaining why
+      — no fabricated placeholder company positions were invented to
+      make the world look more finished than the real content behind
+      it currently is.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place (including the Three.js/R3F/drei
+      dependencies, installed with `--legacy-peer-deps` since
+      `@react-three/fiber@9.7.0`'s declared peer range — `react@>=19
+      <19.3` — lags one React patch release behind this project's
+      already-installed `react@19.3.0`; verified functionally rather
+      than just trusting the peer range, per the above). The full
+      verification suite above was re-run against the actual
+      production build (`npm run build` + `vite preview`) on both
+      desktop and a mobile viewport, with zero console/page errors.
