@@ -747,3 +747,76 @@ for what's deliberately deferred and why.
       verification suite above was re-run against the actual
       production build (`npm run build` + `vite preview`) on both
       desktop and a mobile viewport, with zero console/page errors.
+
+## First vertical slice: one real project landmark, cinematic interaction
+
+Extends the `/future` slice above with a real interaction loop: a
+persistent Time Machine control, environmental depth layers, and one
+fully-wired project landmark (Insense Onboarding) with a premium
+case-study overlay and a handoff to the real PDF viewer. See
+[README → Start Menu & the future experience](README.md#start-menu--the-future-experience).
+
+- [x] `ProjectLandmark`/`ProjectMetric` types replace the earlier empty
+      `CareerMilestone` stub, and `data/landmarks.ts` has one real,
+      populated entry built from `src/data/resume.ts`'s actual Insense
+      numbers — not invented placeholder data.
+- [x] The metrics shown in `ProjectOverlay` were verified to exactly
+      match the source numbers (`32% → 18%`, `+14%`, `47.5% → 51%`) via
+      a real rendered-DOM check, not just code inspection.
+- [x] A persistent Time Machine control exists in the 2011 taskbar
+      (`TimeMachineControl.tsx`, separate from the Start Menu item) and
+      its 2026 counterpart in the HUD, both verified reachable and
+      functional on a real mobile touch profile.
+- [x] Movement works three ways — WASD, arrow keys, and click-to-move
+      (verified: clicking/holding a movement key moves the player, the
+      interaction prompt appears once close enough, and keyboard input
+      correctly overrides a pending click target) — a recruiter never
+      needs gaming knowledge to reach a landmark.
+- [x] Shift-run implemented and included in the same input-tracking ref
+      as the rest of movement, not a separate state path.
+- [x] Approaching a landmark shows `InteractionPrompt` ("[E] Explore …
+      or click to walk closer") only once inside the interaction
+      radius — verified the prompt's proximity check is horizontal-only
+      (unaffected by the ground's own small undulation) and only
+      updates state on an actual near/far *transition*, not every frame.
+- [x] Pressing E opens `ProjectOverlay`: verified in a real screenshot
+      that the world is dimmed/blurred but still visible behind it
+      (not replaced), the close button receives focus on open, and the
+      camera has eased into a fixed cinematic framing of the landmark
+      rather than continuing to follow the player.
+- [x] Movement is disabled while an overlay is open (`movementEnabled`
+      prop into `Player`) — the world behind the dimmed overlay can't be
+      wandered through.
+- [x] Escape backs out one step at a time — closes an open overlay
+      first, only exits to `/` once nothing else is open — verified
+      both cases explicitly (first Escape stays on `/future`, closes
+      the overlay; a second would exit).
+- [x] "Open full case study" hands off to the *real* PDF case-study
+      viewer already built for 2011, via `navigate({ to: "/", search:
+      { case: id } })` — verified end to end: clicking it lands back on
+      `/` with the actual Insense Onboarding `CaseWindow` open, not a
+      re-implementation of case-study reading inside the 3D route. The
+      search param is cleared (`replace: true`) after being consumed so
+      it doesn't linger or re-trigger.
+- [x] **A real bug found and fixed during verification:** `Mountains.tsx`
+      initially placed its silhouettes beyond the scene's fog `far`
+      distance, making them fully invisible — fog only *tints* geometry,
+      it doesn't reposition or exempt it from its own falloff. Fixed by
+      extending the fog's far distance to comfortably include them;
+      confirmed via before/after screenshots that they're now visible
+      as an actual background layer.
+- [x] Player and landmarks read their resting height from the same
+      `getTerrainHeight`/`groundPosition` functions the ground geometry
+      itself uses (`utils/terrain.ts`) — verified visually that neither
+      floats above nor clips into the now-undulating ground.
+- [x] Instancing used for the one genuinely-repeated asset (trees, via
+      drei's `<Instances>`) rather than one mesh per tree; no physics
+      engine added (plain distance/boundary math is enough for a
+      walking path); no postprocessing/bloom dependency added without a
+      concrete, evaluated need (explicitly deferred, not overlooked).
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place. The full verification suite (Time Machine
+      both directions, click/keyboard movement, proximity, overlay
+      open/close/focus, Escape step-back, full-case-study handoff, WebGL
+      -fallback and mobile regressions) was re-run against the actual
+      production build with zero console/page errors throughout.

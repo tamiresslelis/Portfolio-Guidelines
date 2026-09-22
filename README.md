@@ -123,6 +123,7 @@ src/
     ResizeHandles.tsx        # the 8 invisible edge/corner drag zones for CaseWindow
     StartMenu.tsx            # the Start Menu panel (open/close, focus, keyboard nav)
     StartMenuItem.tsx        # one menu row ("View portfolio in the future", "Restart Desktop")
+    TimeMachineControl.tsx   # the persistent taskbar "Go to the present →" control
     EvolutionTransition.tsx  # the CSS-only 2011 → future transition
     FutureChunkLoadingScreen.tsx  # lightweight fallback while future/'s JS chunk downloads
     case-study/
@@ -170,22 +171,31 @@ src/
     FutureErrorBoundary.tsx    # catches WebGL/render failures → FutureErrorFallback
     constants.ts                # movement/camera/DPR tuning, centralized
     scene/
-      FutureScene.tsx           # composes Environment + Lighting + Player + CameraController
-      SceneEnvironment.tsx      # ground, sky/fog color, a few abstract "ruin" primitives
+      FutureScene.tsx           # composes environment + player + camera + landmarks
+      SceneEnvironment.tsx      # undulating ground, fog-matched sky, a few "ruin" primitives
+      Mountains.tsx              # distant mountain silhouette (within the fog's far distance)
+      Vegetation.tsx             # instanced trees — one draw call per part, any tree count
+      Particles.tsx               # a restrained drei <Sparkles> drift
       Lighting.tsx               # one warm directional + one cool hemisphere light
       Player.tsx                  # placeholder capsule; movement computed in useFrame via refs
-      CameraController.tsx        # damped third-person follow camera
+      CameraController.tsx        # damped follow camera, with a cinematic "focus" mode
+      Landmark.tsx                 # one project "hub" structure + proximity detection
     ui/
-      FutureHud.tsx               # title + Exit button + controls hint (DOM, not in-canvas)
+      FutureHud.tsx               # identity, controls hint, the "time machine" back to 2011
       FutureLoadingScreen.tsx     # useProgress-driven overlay for real asset loads (Phase 4/5)
       FutureErrorFallback.tsx     # WebGL-unsupported / render-failure fallback UI
+      InteractionPrompt.tsx        # "[E] Explore … or click to walk closer"
+      ProjectOverlay.tsx           # the case-study summary panel (metrics, "Open full case study")
     hooks/
-      usePlayerMovement.ts        # WASD/arrow input tracked in a ref, not React state
+      usePlayerMovement.ts        # WASD/arrow/Shift input tracked in a ref, not React state
+      usePointAndClickTarget.ts    # raycasts a ground click to a walk-to target
       useWebglSupport.ts           # hydration-safe WebGL capability check
     data/
-      career.ts                    # empty for now — see the section below for why
+      landmarks.ts                 # ProjectLandmark[] — one populated entry (Insense Onboarding)
     types/
-      career.ts                    # the CareerMilestone shape
+      career.ts                    # the ProjectLandmark/ProjectMetric shapes
+    utils/
+      terrain.ts                    # the one height function the ground/player/landmarks all share
 
   router.tsx                  # TanStack Router instance
   routeTree.gen.ts             # generated — do not hand-edit
@@ -556,13 +566,24 @@ finishes downloading — intentionally matches, so the handoff across
 the route change reads as one continuous moment rather than two
 different loading screens.
 
+### The Time Machine
+
+A persistent taskbar control (`TimeMachineControl.tsx`) sits next to the
+system tray — a second, always-visible way into `/future` alongside the
+Start Menu item, styled like an early-computer artifact (beige/gold,
+title "See what happened next."). Its 2026 counterpart lives in
+`FutureHud.tsx` as a small glowing artifact ("Where it all started.",
+CTA "Back to 2011 →") — the same concept restyled per era rather than
+one component reused verbatim, since the control is meant to visually
+evolve between them.
+
 ### `/future` — the React Three Fiber experience
 
 - **Isolation:** `src/future/` is a self-contained module. The only
   coupling point is `routes/future.tsx`'s single `lazy(() =>
   import("../future/FuturePortfolio"))` — nothing under `src/future/`
   imports the 2011 shell, and nothing outside it imports Three.js.
-  Verified in the production build: `FuturePortfolio-*.js` (~900KB) is
+  Verified in the production build: `FuturePortfolio-*.js` (~915KB) is
   its own chunk, never referenced from `/`'s `<head>` or its
   `index-*.js`/`routes-*.js` bundles.
 - **SSR-safe by the same proven pattern as the PDF viewer:**
@@ -572,22 +593,62 @@ different loading screens.
   (yes, it *is* prerendered, since it's a real crawlable route) never
   attempts to create a WebGL context, and the client's first render
   matches the server's exactly (no hydration mismatch).
+- **Environment:** a ground plane displaced by a small deterministic
+  ripple (`utils/terrain.ts` — not real noise, just enough that it
+  doesn't read as a laser-flat void), fog-matched background so the
+  horizon has no visible seam, a handful of instanced trees
+  (`Vegetation.tsx` — one draw call per part regardless of tree count),
+  a distant mountain silhouette (`Mountains.tsx`, deliberately placed
+  *within* the fog's far distance — a mismatch here would fog them into
+  invisibility, which is exactly the bug the first version of this had),
+  and a restrained `<Sparkles>` drift (`Particles.tsx`, from `drei`
+  rather than a hand-rolled particle system). The player and each
+  landmark read their resting height from the same terrain function the
+  ground geometry uses, so nothing floats above or clips into it.
+- **Movement:** WASD/arrow keys, Shift to run, *and* click-to-move
+  (`usePointAndClickTarget.ts` raycasts the click against the ground
+  plane; `Player.tsx` walks toward the result each frame until arrival
+  or until keyboard input resumes and takes over) — a recruiter never
+  needs to know WASD exists to get anywhere.
+- **Project landmarks:** each is a small "hub" structure (a raised
+  platform, a glowing spire, two flanking light pillars —
+  `Landmark.tsx`) rather than a floating UI card, built from
+  `ProjectLandmark` data (`types/career.ts`, populated in
+  `data/landmarks.ts`) that is itself a curated summary of what already
+  exists in `src/data/resume.ts`/`src/data/cases.ts`, not a duplicated
+  dataset. Approaching one shows `InteractionPrompt.tsx` ("[E] Explore
+  … or click to walk closer"); interacting opens `ProjectOverlay.tsx` —
+  metrics displayed prominently, world dimmed and blurred but still
+  visible behind it — with an "Open full case study" button that hands
+  off to the *real* PDF case-study viewer already built for 2011 (via
+  `/?case=<id>`, read and consumed by `routes/index.tsx`) rather than
+  re-implementing case-study reading inside the 3D route.
+- **Camera:** `CameraController.tsx` eases between two modes with the
+  same exponential damping either way — following the player during
+  exploration, or holding a fixed cinematic framing on the active
+  landmark while its overlay is open ("exploration camera → cinematic
+  focus" from the brief, not a hard cut). Movement itself is disabled
+  while an overlay is open, so the world behind it stays still.
 - **State:** player position/rotation and the camera's target are
   mutated directly on their Three.js objects inside `useFrame` via a
   single shared `useRef` created once in `FutureScene.tsx` — never
-  through `setState`, so walking never triggers a React re-render. The
-  camera uses exponential ("1 − e^(−k·dt)") damping rather than a fixed
-  lerp factor, so it eases at a consistent *speed* regardless of frame
-  rate. No external state library — see the architecture notes on when
-  one (zustand, in the R3F ecosystem) would actually earn its place
-  (once more systems need to react to the same high-frequency value;
-  not yet, at this scale).
+  through `setState`, so walking never triggers a React re-render.
+  Which landmark is "near" vs. "active" *is* ordinary `useState` (in
+  `FuturePortfolio.tsx`, outside the canvas, since the DOM overlay/
+  prompt live there) — low-frequency, interaction-driven changes, not
+  per-frame values, so plain state is the right tool, not a store. No
+  external state library — see the architecture notes on when one
+  (zustand, in the R3F ecosystem) would actually earn its place (once
+  more systems need to react to the same *high-frequency* value; not
+  yet, at this scale).
 - **Performance:** one shadow-casting directional light + one
   non-shadow hemisphere fill (no more real-time lights than that); no
   physics engine (a plain distance/boundary clamp is enough for a
-  walking path, not a physics playground); renderer DPR capped at 2,
-  mirroring `PdfPage.tsx`'s exact reasoning for the PDF viewer's own
-  DPR cap.
+  walking path, not a physics playground); instancing for the one
+  genuinely-repeated asset (trees); renderer DPR capped at 2, mirroring
+  `PdfPage.tsx`'s exact reasoning for the PDF viewer's own DPR cap; no
+  postprocessing/bloom yet — deliberately not added for this slice (see
+  "What's next") rather than reached for without a concrete need.
 - **Error handling:** `FutureErrorBoundary.tsx` (a class component —
   React has no hook-based equivalent) catches render failures, and
   `useWebglSupport()` returning `false` skips mounting `<Canvas>`
@@ -595,21 +656,27 @@ different loading screens.
   `FutureErrorFallback.tsx` — a short explanation and a button straight
   back to `/` — verified with WebGL forcibly disabled in a real
   browser: no black canvas, no stuck loading state, no console errors.
-- **Exit:** always available two ways — the HUD's "Exit to 2011"
-  button, or `Escape` — both call the same `onExit` callback the route
-  passes in, which just navigates back to `/`.
+- **Exit:** always available two ways — the HUD's Time Machine button,
+  or `Escape` (which backs out one step at a time: closes an open
+  project overlay first, only exiting to 2011 once nothing else is
+  open) — both eventually call the same `onExit` callback the route
+  passes in.
 
 ### What's next
 
-Deliberately deferred, in roughly this order: a data-driven
-`CareerMilestone[]` built from the *existing* `src/data/resume.ts`
-(not a duplicated dataset — see the type's own doc comment in
-`src/future/types/career.ts`), real company/project stations along the
-path, the accessible HTML career-timeline alternative (sharing that
-same data, not re-authored separately), real environment art in place
-of the primitive placeholders, mobile touch controls, and audio.
-Each is a separable slice on top of the navigation/rendering
-foundation validated here, not a rewrite of it.
+This vertical slice validates the pattern with one real landmark
+(Insense Onboarding); deliberately deferred, in roughly this order: the
+remaining three landmarks (Itaú, Insense AI, Quick Win) added to
+`data/landmarks.ts` the same way, a top-right Projects/About/Resume nav
+once there's more than one destination to make it honest, the
+accessible HTML career-timeline alternative (sharing `ProjectLandmark`
+data, not re-authored separately), real environment art in place of
+the primitive placeholders, postprocessing/bloom if a concrete need
+justifies the dependency, mobile touch movement controls (mobile can
+enter/exit and view the world today, via the same Time Machine
+controls, but has no touch equivalent for movement yet), and audio.
+Each is a separable slice on top of the navigation/rendering/
+interaction foundation validated here, not a rewrite of it.
 
 ## Startup sound
 
