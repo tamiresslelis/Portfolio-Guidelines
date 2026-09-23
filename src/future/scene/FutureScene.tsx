@@ -8,6 +8,7 @@ import { Landmark } from "./Landmark";
 import { Vegetation } from "./Vegetation";
 import { Mountains } from "./Mountains";
 import { Particles } from "./Particles";
+import { Blossoms } from "./Blossoms";
 import { projectLandmarks } from "../data/landmarks";
 import { groundPosition } from "../utils/terrain";
 import type { ProjectLandmark } from "../types/career";
@@ -39,6 +40,7 @@ export function FutureScene({ activeLandmark, onProximityChange }: FutureScenePr
       <SceneEnvironment />
       <Mountains />
       <Vegetation />
+      <Blossoms />
       <Particles />
       <Lighting />
       {projectLandmarks.map((landmark) => (

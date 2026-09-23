@@ -48,18 +48,21 @@ export function Landmark({ landmark, playerRef, onProximityChange }: LandmarkPro
 
   return (
     <group position={groundedPosition}>
+      {/* Dark, mossy platform — the glow above reads as light against
+          dark rather than metal-against-daylight, matching the reference's
+          "technology accent against dark, organic surroundings". */}
       <mesh position={[0, 0.15, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[3, 3.4, 0.3, 24]} />
-        <meshStandardMaterial color="#294845" roughness={0.7} />
+        <meshStandardMaterial color="#1c2417" roughness={0.85} />
       </mesh>
       <mesh position={[0, 2, 0]} castShadow>
         <coneGeometry args={[1.6, 3, 6]} />
-        <meshStandardMaterial color="#e0b23c" emissive="#e0b23c" emissiveIntensity={0.35} roughness={0.4} />
+        <meshStandardMaterial color="#e0b23c" emissive="#e0b23c" emissiveIntensity={0.5} roughness={0.4} />
       </mesh>
       {[-2.1, 2.1].map((x) => (
         <mesh key={x} position={[x, 1.2, 1.6]} castShadow>
           <cylinderGeometry args={[0.15, 0.15, 2.4, 8]} />
-          <meshStandardMaterial color="#8fc4ff" emissive="#8fc4ff" emissiveIntensity={0.5} roughness={0.3} />
+          <meshStandardMaterial color="#8fc4ff" emissive="#8fc4ff" emissiveIntensity={0.7} roughness={0.3} />
         </mesh>
       ))}
     </group>

@@ -24,7 +24,7 @@ export function Mountains() {
       {MOUNTAINS.map((mountain) => (
         <mesh key={mountain.position.join(",")} position={mountain.position}>
           <coneGeometry args={[mountain.radius, mountain.height, 5]} />
-          <meshStandardMaterial color="#24413d" roughness={1} fog />
+          <meshStandardMaterial color="#0e1610" roughness={1} fog />
         </mesh>
       ))}
     </>

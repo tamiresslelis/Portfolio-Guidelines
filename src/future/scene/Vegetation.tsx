@@ -33,7 +33,7 @@ export function Vegetation() {
     <>
       <Instances limit={TREES.length} castShadow>
         <cylinderGeometry args={[0.15, 0.22, 1.6, 6]} />
-        <meshStandardMaterial color="#4a3323" roughness={0.9} />
+        <meshStandardMaterial color="#2b1f14" roughness={0.95} />
         {TREES.map((tree) => (
           <Instance
             key={tree.position.join(",")}
@@ -44,7 +44,7 @@ export function Vegetation() {
       </Instances>
       <Instances limit={TREES.length} castShadow>
         <coneGeometry args={[1.1, 2.2, 8]} />
-        <meshStandardMaterial color="#6b8a4f" roughness={0.85} />
+        <meshStandardMaterial color="#38452a" roughness={0.9} />
         {TREES.map((tree) => (
           <Instance
             key={tree.position.join(",")}

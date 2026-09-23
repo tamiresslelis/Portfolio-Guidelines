@@ -20,6 +20,15 @@ const RUINS: RuinInstance[] = [
   { position: [-3, 2, -13], rotationY: 1.1, scale: [0.8, 4, 0.8] },
 ];
 
+// A dark, moody near-black-green rather than the earlier bright teal —
+// matching the moss-and-night-forest reference (dark backdrop, cool
+// desaturated moss, delicate light accents doing the work instead of a
+// bright overall exposure).
+const BACKGROUND_COLOR = "#141910";
+const FOG_COLOR = "#181f16";
+const GROUND_COLOR = "#333f24";
+const RUIN_COLOR = "#37423a";
+
 const GROUND_SIZE = 60;
 const GROUND_SEGMENTS = 48;
 
@@ -53,26 +62,26 @@ export function SceneEnvironment() {
 
   return (
     <>
-      {/* The background color intentionally matches the fog color exactly
+      {/* The background color intentionally matches the fog color closely
           — fog only tints geometry, never the empty background on its
           own, so a mismatched pair leaves a visible seam where the fogged
           ground meets the "sky" at the horizon. */}
-      <color attach="background" args={["#3c6b63"]} />
+      <color attach="background" args={[BACKGROUND_COLOR]} />
       {/* far=52 rather than the ground's own ~34-unit visible radius:
           Mountains.tsx places its silhouettes around z=-28..-34
           specifically to read as background *through* haze, not be fully
           fogged into invisibility — a mismatched pair here would defeat
           the whole point of having them. */}
-      <fog attach="fog" args={["#3c6b63", 8, 52]} />
+      <fog attach="fog" args={[FOG_COLOR, 8, 52]} />
 
       <mesh geometry={groundGeometry} rotation-x={-Math.PI / 2} receiveShadow>
-        <meshStandardMaterial color="#33564a" roughness={1} />
+        <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
 
       {RUINS.map((ruin) => (
         <mesh key={ruin.position.join(",")} position={ruin.position} rotation-y={ruin.rotationY} castShadow receiveShadow>
           <boxGeometry args={ruin.scale} />
-          <meshStandardMaterial color="#5b6b74" roughness={0.85} />
+          <meshStandardMaterial color={RUIN_COLOR} roughness={0.9} />
         </mesh>
       ))}
     </>

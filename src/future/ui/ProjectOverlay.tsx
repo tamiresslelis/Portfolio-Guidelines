@@ -32,7 +32,11 @@ export function ProjectOverlay({ landmark, onClose, onOpenFullCaseStudy }: Proje
       aria-modal="true"
       aria-labelledby={titleId}
     >
-      <div className="w-full max-w-md rounded-lg border border-white/15 bg-[#0b1f1c]/95 p-6 shadow-2xl">
+      {/* Frosted-glass card rather than a flat solid panel — matching the
+          reference's floating dark UI cards: translucent, blurred,
+          softly bordered, so it reads as an object *in* the scene rather
+          than a modal slapped on top of it. */}
+      <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0d1712]/85 p-6 shadow-2xl backdrop-blur-xl">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="m-0 text-xs font-medium tracking-[2px] text-[#8fc4ff] uppercase">{landmark.company}</p>
