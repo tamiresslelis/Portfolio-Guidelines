@@ -820,3 +820,51 @@ case-study overlay and a handoff to the real PDF viewer. See
       open/close/focus, Escape step-back, full-case-study handoff, WebGL
       -fallback and mobile regressions) was re-run against the actual
       production build with zero console/page errors throughout.
+
+## Art direction pass: dark, mossy, glass-UI mood
+
+A visual reference (dark, moody forest with moss, delicate white
+blossoms, cool speckled dust, and premium glass-dark floating UI cards)
+was analyzed for reusable *principles* — palette, mood, material
+treatment, UI-card feel — rather than copied literally, per the
+established visual-reference workflow.
+
+- [x] Background/fog/ground/ruins/mountains all shifted to a darker,
+      more desaturated palette; the fog/background color-match
+      invariant (established in the prior slice, to avoid a horizon
+      seam) was preserved through the change, not accidentally broken.
+- [x] Directional + hemisphere lighting dimmed and cooled for a
+      nocturnal-forest mood — then deliberately brightened back up one
+      step after an initial pass screenshotted as too dark, balancing
+      the new mood against the standing "avoid making the environment
+      too dark, recruiters need to read content easily" requirement
+      rather than optimizing for mood alone.
+- [x] New `Blossoms.tsx`: small instanced white accent clusters near
+      the landmark and path, matching the reference's delicate-flower
+      -on-moss motif — tuned (tighter offsets, lower emissive) after an
+      initial pass read as sparse floating orbs rather than flower
+      clusters, verified via before/after screenshots.
+- [x] `Particles.tsx` extended with a second, cooler, wider, mostly
+      -static `<Sparkles>` layer standing in for a dark speckled sky,
+      alongside the existing warm ground-level dust drift — still just
+      `drei`'s built-in component, no new dependency.
+- [x] `ProjectOverlay`'s card restyled toward a frosted-glass treatment
+      (`backdrop-blur-xl`, translucent background, softer border) to
+      read as an object embedded in the scene rather than a flat modal
+      slapped on top of it, matching the reference's floating UI cards.
+- [x] The landmark's platform darkened to a mossy tone while its glow
+      accents (spire, pillars) were made slightly *more* emissive — a
+      darker backdrop needs a relatively brighter accent to keep reading
+      clearly as the signature "light against dark" element.
+- [x] Verified via real screenshots at three points (wide establishing
+      shot, close approach with the interaction prompt visible, and the
+      open project overlay) rather than trusting the color values alone
+      — this is what caught both the "too dark" and "orb-like blossoms"
+      issues above.
+- [x] Full functional regression re-run after the visual changes (Time
+      Machine → walk to landmark → interaction prompt → overlay with
+      correct metrics → "Open full case study" → real case window) —
+      zero console/page errors, confirming the art-direction pass
+      touched only materials/colors/lighting, not behavior.
+- [x] `npx tsc --noEmit`, `oxlint`, and `npm run build` all pass with
+      the change in place.

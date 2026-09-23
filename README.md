@@ -175,6 +175,7 @@ src/
       SceneEnvironment.tsx      # undulating ground, fog-matched sky, a few "ruin" primitives
       Mountains.tsx              # distant mountain silhouette (within the fog's far distance)
       Vegetation.tsx             # instanced trees — one draw call per part, any tree count
+      Blossoms.tsx                # instanced white "blossom" accent clusters
       Particles.tsx               # a restrained drei <Sparkles> drift
       Lighting.tsx               # one warm directional + one cool hemisphere light
       Player.tsx                  # placeholder capsule; movement computed in useFrame via refs
@@ -601,10 +602,22 @@ evolve between them.
   a distant mountain silhouette (`Mountains.tsx`, deliberately placed
   *within* the fog's far distance — a mismatch here would fog them into
   invisibility, which is exactly the bug the first version of this had),
-  and a restrained `<Sparkles>` drift (`Particles.tsx`, from `drei`
-  rather than a hand-rolled particle system). The player and each
-  landmark read their resting height from the same terrain function the
-  ground geometry uses, so nothing floats above or clips into it.
+  small instanced "blossom" clusters (`Blossoms.tsx`) as a delicate
+  accent against the dark moss, and two restrained `<Sparkles>` layers
+  (`Particles.tsx`, from `drei` rather than a hand-rolled particle
+  system) — a warm ground-level dust drift and a cooler, wider, mostly
+  -static speckle spread standing in for a dark, speckled sky. The
+  player and each landmark read their resting height from the same
+  terrain function the ground geometry uses, so nothing floats above or
+  clips into it.
+- **Mood:** dark and moody rather than bright daylight — a near-black
+  background/fog, desaturated moss-green ground and foliage, and a dim,
+  cool-toned directional light, with color reserved for the things that
+  should actually draw the eye: the landmark's warm glow, its cool
+  light-pillar accents, and the blossom clusters. Tuned against a real
+  visual reference (a dark, mossy, glass-UI-forward aesthetic) rather
+  than invented from scratch — see the git history for the before/after
+  screenshots that drove the specific color/intensity values.
 - **Movement:** WASD/arrow keys, Shift to run, *and* click-to-move
   (`usePointAndClickTarget.ts` raycasts the click against the ground
   plane; `Player.tsx` walks toward the result each frame until arrival
